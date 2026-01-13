@@ -3,7 +3,7 @@ const router = express.Router();
 import { protect, admin } from '../middleware/auth.js';
 import multer from 'multer';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
-import {cloudinary} from '../config/cloudinary.js'; 
+import { cloudinary } from '../config/cloudinary.js';
 import CarouselSlide from '../models/CarouselSlide.js';
 
 const storage = new CloudinaryStorage({
@@ -32,17 +32,42 @@ const upload = multer({
 // @route   GET /api/carousel/slides
 // @desc    Get all carousel slides
 // @access  Public
+// @route   GET /api/carousel/slides
+// @desc    Get active carousel slides (for public display)
+// @access  Public
 router.get('/slides', async (req, res) => {
     try {
-        const slides = await CarouselSlide.find({ isActive: true })
+        const slides = await CarouselSlide.find()
             .sort({ order: 1, createdAt: -1 });
-        
+
         res.json({
             success: true,
             slides
         });
     } catch (error) {
         console.error('Error fetching carousel slides:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch carousel slides',
+            error: error.message
+        });
+    }
+});
+
+// @route   GET /api/carousel/slides/all
+// @desc    Get all carousel slides (including inactive, for admin)
+// @access  Private/Admin
+router.get('/slides/all', protect, admin, async (req, res) => {
+    try {
+        const slides = await CarouselSlide.find()
+            .sort({ order: 1, createdAt: -1 });
+
+        res.json({
+            success: true,
+            slides
+        });
+    } catch (error) {
+        console.error('Error fetching all carousel slides:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch carousel slides',
@@ -73,7 +98,8 @@ router.post('/slides', protect, admin, upload.single('image'), async (req, res) 
             title,
             subtitle,
             image: req.file.path, // Cloudinary URL
-            order: newOrder
+            order: newOrder,
+            isActive: true
         });
 
         res.status(201).json({
@@ -82,7 +108,7 @@ router.post('/slides', protect, admin, upload.single('image'), async (req, res) 
         });
     } catch (error) {
         console.error('Error creating carousel slide:', error);
-        
+
         // If there's an error and image was uploaded, delete it from Cloudinary
         if (req.file && req.file.filename) {
             try {
@@ -106,7 +132,7 @@ router.post('/slides', protect, admin, upload.single('image'), async (req, res) 
 router.put('/slides/:id', protect, admin, upload.single('image'), async (req, res) => {
     try {
         const { title, subtitle, order } = req.body;
-        
+
         let slide = await CarouselSlide.findById(req.params.id);
 
         if (!slide) {
