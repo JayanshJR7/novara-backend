@@ -14,7 +14,9 @@ import { protect } from '../middleware/auth.js';
  * @desc    Create Razorpay order
  * @access  Private
  */
-router.post('/create-order', protect, createRazorpayOrder);
+// router.post('/create-order', protect, createRazorpayOrder);
+router.post('/create-order', createRazorpayOrder);
+
 
 /**
  * @route   POST /api/payment/verify
