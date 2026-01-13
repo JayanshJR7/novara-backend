@@ -1,0 +1,276 @@
+.trending-now-section {
+  padding: 4rem 0;
+  background: linear-gradient(135deg, #f8f6f3 0%, #f4f1eb 100%);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.trending-container {
+  max-width: 100%;
+  position: relative;
+}
+
+.trending-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 0 1rem;
+}
+
+.trending-header h2 {
+  font-size: 5rem;
+  color: #300708;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.trending-header p {
+  color: #300708;
+  font-size: 1.3rem;
+}
+
+.showcase-wrapper {
+  overflow: hidden;
+  position: relative;
+  padding: 2rem 0;
+}
+
+.showcase-track {
+  display: flex;
+  gap: 2rem;
+  animation: scroll 40s linear infinite;
+  width: fit-content;
+}
+
+.showcase-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.showcase-card {
+  min-width: 280px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px #300708;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.showcase-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px #f5c160;
+}
+
+.card-image-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  max-width: 500px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.showcase-card:hover .card-image {
+  transform: scale(1.1);
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-overlay.visible {
+  opacity: 1;
+}
+
+.icon-btn {
+  background: white;
+  border: none;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  color: #1a1a1a;
+}
+
+.icon-btn:hover {
+  background: #8b7355;
+  color: white;
+  transform: scale(1.1);
+}
+
+.icon-btn.active {
+  background: #8b7355;
+  color: white;
+}
+
+.card-info {
+  padding: 1.5rem;
+}
+
+.card-info h3 {
+  font-size: 1.1rem;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price {
+  font-size: 1.25rem;
+  color: #8b7355;
+  font-weight: 600;
+  margin: 0;
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 150px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.gradient-left {
+  left: 0;
+  background: linear-gradient(to right, #f8f6f3, transparent);
+}
+
+.gradient-right {
+  right: 0;
+  background: linear-gradient(to left, #f4f1eb, transparent);
+}
+
+@media (max-width: 968px) {
+  .trending-now-section {
+    padding: 3rem 0;
+  }
+
+  .trending-header h2 {
+    font-size: 3rem;
+  }
+
+  .trending-header p {
+    font-size: 1.1rem;
+  }
+
+  .showcase-wrapper {
+    padding: 1.5rem 0;
+  }
+
+  .showcase-track {
+    gap: 1.5rem;
+    animation: scroll 32s linear infinite;
+  }
+
+  .showcase-card {
+    min-width: 240px;
+  }
+
+  .card-image-container {
+    height: 260px;
+  }
+
+  .card-info {
+    padding: 1.2rem;
+  }
+
+  .price {
+    font-size: 1.1rem;
+  }
+
+  .gradient-overlay {
+    width: 100px;
+  }
+}
+
+@media (max-width: 576px) {
+  .trending-now-section {
+    padding: 2rem 0;
+  }
+
+  .trending-header {
+    margin-bottom: 2rem;
+  }
+
+  .trending-header h2 {
+    font-size: 1.8rem;
+  }
+
+  .trending-header p {
+    font-size: 0.95rem;
+  }
+
+  .showcase-wrapper {
+    padding: 1rem 0;
+  }
+
+  .showcase-track {
+    gap: 0.8rem;
+    animation: scroll 24s linear infinite;
+  }
+
+  .showcase-card {
+    min-width: 180px;
+    border-radius: 10px;
+  }
+
+  .card-image-container {
+    height: 200px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .card-info {
+    padding: 1rem;
+  }
+
+  .card-info h3 {
+    font-size: 0.95rem;
+  }
+
+  .price {
+    font-size: 1rem;
+  }
+
+  .gradient-overlay {
+    width: 60px;
+  }
+}

@@ -1,0 +1,499 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+
+.signature-section {
+    position: relative;
+    padding: 80px 20px;
+    background: linear-gradient(135deg, 
+        #fdfbf7 0%, 
+        #faf8f4 25%,
+        #f9f5f0 50%,
+        #faf8f4 75%,
+        #fdfbf7 100%
+    );
+    overflow: hidden;
+    border-top: 2px solid rgba(48, 7, 8, 0.1);
+    border-bottom: 2px solid rgba(48, 7, 8, 0.1);
+}
+
+/* Decorative Ornaments */
+.signature-ornament-left,
+.signature-ornament-right {
+    position: absolute;
+    top: 30px;
+    font-size: 32px;
+    color: #300708;
+    opacity: 0.15;
+    animation: float 4s ease-in-out infinite;
+}
+
+.signature-ornament-left {
+    left: 40px;
+}
+
+.signature-ornament-right {
+    right: 40px;
+    animation-delay: 2s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-10px) rotate(5deg);
+    }
+}
+
+/* Ink Splatter Effects */
+.ink-splatter {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(48, 7, 8, 0.03) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(20px);
+    animation: splatters 8s ease-in-out infinite;
+}
+
+.ink-splatter-1 {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.ink-splatter-2 {
+    top: 60%;
+    right: 15%;
+    animation-delay: 3s;
+}
+
+.ink-splatter-3 {
+    bottom: 30%;
+    left: 20%;
+    animation-delay: 6s;
+}
+
+@keyframes splatters {
+    0%, 100% {
+        transform: scale(1) translate(0, 0);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.5) translate(20px, -20px);
+        opacity: 0.6;
+    }
+}
+
+/* Container */
+.signature-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* Title */
+.signature-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: #5a4a3a;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.signature-title.animate {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.title-text {
+    letter-spacing: 2px;
+    position: relative;
+}
+
+.title-text::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #8b7355, transparent);
+    animation: underlineGrow 1.5s ease-out 0.5s forwards;
+}
+
+@keyframes underlineGrow {
+    to {
+        width: 100%;
+    }
+}
+
+.heart-icon {
+    color: #d4af37;
+    font-size: 28px;
+    animation: heartbeat 1.5s ease-in-out infinite;
+    display: inline-block;
+}
+
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    25% {
+        transform: scale(1.2);
+    }
+    50% {
+        transform: scale(1);
+    }
+}
+
+/* Signature Wrapper */
+.signature-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 30px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* SVG Signature */
+.signature-svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 12px rgba(48, 7, 8, 0.15));
+}
+
+.signature-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    opacity: 0;
+}
+
+.signature-svg.drawing .signature-path {
+    animation: drawSignature 1.2s ease-out forwards;
+    opacity: 1;
+}
+
+@keyframes drawSignature {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Placeholder signature (remove when you add paths) */
+.placeholder-signature {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.placeholder-signature.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Pen Tip Animation */
+.pen-tip {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #300708, #8b7355);
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(48, 7, 8, 0.6);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pen-tip.moving {
+    animation: penMovement 3.5s ease-in-out forwards;
+}
+
+@keyframes penMovement {
+    0% {
+        opacity: 0;
+        left: 10%;
+        top: 30%;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        left: 90%;
+        top: 70%;
+    }
+}
+
+/* Name Reveal */
+.signature-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: #300708;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.signature-name.reveal {
+    animation: fadeInUp 1s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.name-letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px) rotate(-5deg);
+    animation: letterDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.signature-name.reveal .name-letter:nth-child(1)  { animation-delay: 0.1s; }
+.signature-name.reveal .name-letter:nth-child(2)  { animation-delay: 0.2s; }
+.signature-name.reveal .name-letter:nth-child(3)  { animation-delay: 0.3s; }
+.signature-name.reveal .name-letter:nth-child(4)  { animation-delay: 0.4s; }
+.signature-name.reveal .name-letter:nth-child(5)  { animation-delay: 0.5s; }
+.signature-name.reveal .name-letter:nth-child(6)  { animation-delay: 0.6s; }
+.signature-name.reveal .name-letter:nth-child(7)  { animation-delay: 0.7s; }
+.signature-name.reveal .name-letter:nth-child(8)  { animation-delay: 0.8s; }
+.signature-name.reveal .name-letter:nth-child(9)  { animation-delay: 0.9s; }
+.signature-name.reveal .name-letter:nth-child(10) { animation-delay: 1s; }
+.signature-name.reveal .name-letter:nth-child(11) { animation-delay: 1.1s; }
+.signature-name.reveal .name-letter:nth-child(12) { animation-delay: 1.2s; }
+
+
+@keyframes letterDrop {
+    to {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+    }
+}
+
+.name-space {
+    display: inline-block;
+    width: 12px;
+}
+
+/* Social Buttons */
+.signature-social {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 25px;
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.signature-social.reveal {
+    animation: zoomIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s forwards;
+}
+
+@keyframes zoomIn {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.signature-social-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.5px;
+}
+
+.signature-social-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+    z-index: 0;
+}
+
+.signature-social-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.signature-social-btn svg,
+.signature-social-btn span {
+    position: relative;
+    z-index: 1;
+}
+
+.signature-social-btn svg {
+    font-size: 18px;
+}
+
+/* Instagram Button */
+.instagram-btn {
+    background: white;
+    color: #300708;
+    border: 2px solid rgba(48, 7, 8, 0.1);
+}
+
+.instagram-btn::before {
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+}
+
+.instagram-btn:hover {
+    color: white;
+    border-color: transparent;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(188, 24, 136, 0.3);
+}
+
+/* WhatsApp Button */
+.whatsapp-btn {
+    background: white;
+    color: #300708;
+    border: 2px solid rgba(48, 7, 8, 0.1);
+}
+
+.whatsapp-btn::before {
+    background: #25d366;
+}
+
+.whatsapp-btn:hover {
+    color: white;
+    border-color: transparent;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.3);
+}
+
+/* Quote */
+.signature-quote {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: #8b7355;
+    opacity: 0;
+    transform: translateY(10px);
+    letter-spacing: 1px;
+}
+
+.signature-quote.reveal {
+    animation: fadeInUp 1s ease-out 1.5s forwards;
+}
+
+.signature-quote::before,
+.signature-quote::after {
+    content: '❝';
+    font-size: 24px;
+    color: #d4af37;
+    opacity: 0.4;
+    margin: 0 8px;
+}
+
+.signature-quote::after {
+    content: '❞';
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .signature-section {
+        padding: 60px 15px;
+    }
+
+    .signature-title {
+        font-size: 18px;
+        flex-wrap: wrap;
+    }
+
+    .signature-wrapper {
+        max-width: 100%;
+        height: 120px;
+    }
+
+    .signature-name {
+        font-size: 22px;
+        letter-spacing: 2px;
+    }
+
+    .signature-social {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .signature-social-btn {
+        width: 200px;
+        justify-content: center;
+    }
+
+    .signature-quote {
+        font-size: 14px;
+        padding: 0 20px;
+    }
+
+    .signature-ornament-left,
+    .signature-ornament-right {
+        font-size: 24px;
+        top: 20px;
+    }
+
+    .signature-ornament-left {
+        left: 20px;
+    }
+
+    .signature-ornament-right {
+        right: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .signature-title {
+        font-size: 16px;
+    }
+
+    .heart-icon {
+        font-size: 22px;
+    }
+
+    .signature-name {
+        font-size: 20px;
+    }
+
+    .signature-social-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .signature-social-btn svg {
+        font-size: 16px;
+    }
+}

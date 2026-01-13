@@ -1,0 +1,756 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Global Styles */
+.care-guide-page {
+  min-height: 100vh;
+  cursor: default;
+  background: linear-gradient(135deg, #fdfbfb 0%, #f5f5f5 100%);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Hero Section */
+.care-hero {
+  background: linear-gradient(135deg, #300708 0%, #5a1a1c 100%);
+  padding: 120px 20px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.care-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23pattern)"/></svg>');
+  opacity: 0.3;
+  animation: movePattern 20s linear infinite;
+}
+
+@keyframes movePattern {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(100px, 100px); }
+}
+
+.care-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.care-main-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 4.5rem;
+  color: #fff;
+  margin-bottom: 20px;
+  font-weight: 700;
+  animation: fadeInDown 1s ease-out;
+}
+
+.care-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 300;
+  line-height: 1.6;
+  animation: fadeInUp 1s ease-out 0.3s both;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Container */
+.care-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+/* Section Titles */
+.section-title {
+  font-family: 'Dancing Script', cursive;
+  font-size: 3rem;
+  color: #300708;
+  text-align: center;
+  margin-bottom: 50px;
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #300708, transparent);
+  animation: expandLine 0.8s ease-out forwards;
+}
+
+@keyframes expandLine {
+  from {
+    width: 0;
+  }
+  to {
+    width: 80px;
+  }
+}
+
+/* Animation Classes */
+.animate-in {
+  animation: slideInUp 0.8s ease-out forwards;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Introduction Section */
+.care-intro {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.intro-content {
+  background: white;
+  padding: 50px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(48, 7, 8, 0.08);
+  text-align: center;
+}
+
+.intro-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #555;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Care Instructions Grid */
+.care-instructions {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.instructions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.instruction-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s ease;
+  animation: fadeIn 0.6s ease-out backwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.instruction-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 40px rgba(48, 7, 8, 0.15);
+}
+
+.instruction-icon {
+  font-size: 3rem;
+  color: #300708;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.instruction-title {
+  font-size: 1.4rem;
+  color: #300708;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.instruction-description {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Do's and Don'ts Section */
+.dos-donts-section {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.dos-donts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.dos-card,
+.donts-card {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.dos-card:hover,
+.donts-card:hover {
+  transform: translateY(-5px);
+}
+
+.dos-header,
+.donts-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.dos-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.donts-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.dos-header h3,
+.donts-header h3 {
+  font-size: 1.8rem;
+  color: #300708;
+  margin: 0;
+  font-weight: 600;
+}
+
+.dos-list,
+.donts-list {
+  list-style: none;
+  padding: 0;
+}
+
+.dos-list li,
+.donts-list li {
+  padding: 12px 0;
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: padding-left 0.3s ease;
+}
+
+.dos-list li:hover,
+.donts-list li:hover {
+  padding-left: 10px;
+}
+
+.checkmark {
+  color: #22c55e;
+  font-weight: bold;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.cross {
+  color: #ef4444;
+  font-weight: bold;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+/* Cleaning Guide */
+.cleaning-guide {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.cleaning-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.cleaning-step {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.cleaning-step:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(48, 7, 8, 0.15);
+}
+
+.step-number {
+  position: absolute;
+  top: -20px;
+  left: 30px;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #300708, #5a1a1c);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(48, 7, 8, 0.3);
+}
+
+.step-content h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #300708;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.step-content p {
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Certificate Section */
+.certificate-section {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.certificate-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.certificate-icon-header {
+  font-size: 4rem;
+  color: #300708;
+  margin-bottom: 20px;
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.certificate-intro {
+  font-size: 1.1rem;
+  color: #555;
+  line-height: 1.8;
+  max-width: 800px;
+  margin: 20px auto 0;
+}
+
+.certificate-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 40px;
+  margin-bottom: 50px;
+}
+
+.certificate-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.4s ease;
+}
+
+.certificate-card:hover {
+  transform: scale(1.03);
+}
+
+.certificate-label {
+  background: linear-gradient(135deg, #300708, #5a1a1c);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.certificate-image-container {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio:3/3;
+  background: linear-gradient(135deg, #300708, #5a1a1c);
+}
+
+.certificate-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.5s ease;
+}
+
+.certificate-card:hover .certificate-image {
+  transform: scale(1.1);
+}
+
+.certificate-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(48, 7, 8, 0.9), transparent);
+  color: white;
+  padding: 20px;
+  transform: translateY(100%);
+  transition: transform 0.4s ease;
+}
+
+.certificate-card:hover .certificate-overlay {
+  transform: translateY(0);
+}
+
+.certificate-overlay p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.certificate-features {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.certificate-features h3 {
+  font-size: 1.8rem;
+  color: #300708;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: #f0f0f0;
+  transform: translateX(5px);
+}
+
+.feature-icon {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.feature-item p {
+  margin: 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* Storage Tips */
+.storage-tips {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.storage-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 50px;
+  align-items: center;
+  background: white;
+  padding: 50px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.storage-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #300708;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.storage-list {
+  list-style: none;
+  padding: 0;
+}
+
+.storage-list li {
+  padding: 15px 0;
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.7;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.storage-list li strong {
+  color: #300708;
+  font-weight: 600;
+}
+
+/* Professional Care */
+.professional-care {
+  margin-bottom: 80px;
+  opacity: 0;
+}
+
+.professional-content {
+  background: white;
+  padding: 50px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.professional-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.professional-card {
+  padding: 30px;
+  background: linear-gradient(135deg, #fdfbfb 0%, #f9f9f9 100%);
+  border-radius: 12px;
+  border-left: 4px solid #300708;
+  transition: all 0.3s ease;
+}
+
+.professional-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(48, 7, 8, 0.1);
+}
+
+.professional-card h4 {
+  color: #300708;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.professional-card p {
+  color: #666;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+/* CTA Section */
+.care-cta {
+  text-align: center;
+  padding: 60px 40px;
+  background: linear-gradient(135deg, #300708, #5a1a1c);
+  border-radius: 20px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(48, 7, 8, 0.3);
+}
+
+.care-cta h2 {
+  font-family: 'Dancing Script', cursive;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.care-cta p {
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.cta-button {
+  padding: 15px 50px;
+  font-size: 1.1rem;
+  background: white;
+  color: #300708;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.cta-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .care-main-title {
+    font-size: 3rem;
+  }
+
+  .section-title {
+    font-size: 2.2rem;
+  }
+
+  .intro-content {
+    padding: 30px 20px;
+  }
+
+  .instructions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dos-donts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cleaning-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .certificate-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .storage-content {
+    grid-template-columns: 1fr;
+    padding: 30px;
+  }
+
+  .storage-illustration {
+    margin-bottom: 20px;
+  }
+
+  .professional-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .care-cta {
+    padding: 40px 20px;
+  }
+
+  .care-cta h2 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .care-main-title {
+    font-size: 2.5rem;
+  }
+
+  .care-subtitle {
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+
+  .instruction-card {
+    padding: 25px 20px;
+  }
+
+  .dos-card,
+  .donts-card {
+    padding: 25px 20px;
+  }
+}
