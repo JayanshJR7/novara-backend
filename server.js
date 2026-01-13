@@ -26,18 +26,28 @@ const app = express();
 
 connectDB();
 
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "https://novara-frontend.vercel.app" // later (example)
+];
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL,
-      'https://www.novarajewels.in',
-      'https://novarajewels.in'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS not allowed"));
+      }
+    },
+    credentials: true
   })
 );
+
+app.options("*", cors());
 
 
 // Body parser middleware
