@@ -27,10 +27,8 @@ export const getProducts = async (req, res) => {
       ];
     }
 
-    // Fetch products from database
     const products = await Product.find(filter).sort({ createdAt: -1 });
 
-    // NO PRICE CALCULATION NEEDED - finalPrice already stored in DB
     res.json({
       success: true,
       count: products.length,
@@ -54,14 +52,12 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // 🔥 Increment views
     await Product.findByIdAndUpdate(
       req.params.id,
       { $inc: { views: 1 } },
       { new: false }
     );
 
-    // NO PRICE CALCULATION NEEDED
     res.json({
       success: true,
       product: product
@@ -350,7 +346,6 @@ export const getTrendingProducts = async (req, res) => {
       { $limit: limit }
     ]);
 
-    // NO PRICE CALCULATION NEEDED - finalPrice already in DB
     res.json({
       success: true,
       count: products.length,
@@ -362,3 +357,56 @@ export const getTrendingProducts = async (req, res) => {
   }
 };
 
+export const searchProducts = async (req, res) => {
+
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim().length < 2) {
+      return res.status(200).json({
+        success: true,
+        products: [],
+        suggestions: [],
+        categories: []
+      });
+    }
+
+    const searchTerm = query.trim();
+
+    const products = await Product.find({
+      $or: [
+        { itemname: { $regex: searchTerm, $options: 'i' } },
+        { itemCode: { $regex: searchTerm, $options: 'i' } },
+        { category: { $regex: searchTerm, $options: 'i' } }
+      ]
+    })
+      .limit(20)
+      .select('itemname itemCode category itemImage finalPrice basePrice')
+      .lean();
+
+    const categorySuggestions = await Product.distinct('category', {
+      category: { $regex: searchTerm, $options: 'i' }
+    });
+
+    const categories = [...new Set(products.map(p => p.category))];
+
+    return res.status(200).json({
+      success: true,
+      products,
+      categories,
+      suggestions: categorySuggestions
+    });
+
+  } catch (error) {
+    console.error('❌ Search error:', error.message);
+    console.error('❌ Full error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Search failed: ' + error.message,
+      products: [],
+      suggestions: [],
+      categories: []
+    });
+  }
+};
