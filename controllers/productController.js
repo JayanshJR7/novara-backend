@@ -152,14 +152,14 @@ export const createProduct = async (req, res) => {
       // If it's already an object
       else if (typeof req.body.weight === 'object') {
         weightData = {
-          netWeight: parseFloat(req.body.weight.netWeight) || 0,
+          silverWeight: parseFloat(req.body.weight.silverWeight) || 0,
           grossWeight: parseFloat(req.body.weight.grossWeight) || 0,
           unit: req.body.weight.unit || 'grams'
         };
       }
     } else {
       weightData = {
-        netWeight: 0,
+        silverWeight: 0,
         grossWeight: 0,
         unit: 'grams'
       };
@@ -256,7 +256,7 @@ export const updateProduct = async (req, res) => {
 
     if (req.body.weight) {
       product.weight = {
-        netWeight: parseFloat(req.body.weight.netWeight) || product.weight.netWeight || 0,
+        silverWeight: parseFloat(req.body.weight.silverWeight) || product.weight.silverWeight || 0,
         grossWeight: parseFloat(req.body.weight.grossWeight) || product.weight.grossWeight || 0,
         unit: req.body.weight.unit || product.weight.unit || 'grams'
       };
