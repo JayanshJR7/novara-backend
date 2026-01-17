@@ -67,19 +67,15 @@ export const getProductById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 /**
- * @desc    Create new product
- * @route   POST /api/products
- * @access  Private/Admin
- */
-/**
- * @desc    Create new product
+ * @desc    Create new product with MULTIPLE IMAGES
  * @route   POST /api/products
  * @access  Private/Admin
  */
 export const createProduct = async (req, res) => {
   try {
-    const { itemname, itemCode, basePrice, category, description } = req.body;
+    const { itemname, itemCode, basePrice, category, description, deliveryType } = req.body;
 
     if (!itemname) {
       return res.status(400).json({
@@ -102,40 +98,85 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Check if image was uploaded
-    if (!req.file) {
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please upload a product image'
+        message: 'Please upload at least one product image'
       });
     }
 
-    // Check if product code already exists
+    // Maximum 5 images validation
+    if (req.files.length > 5) {
+      // Delete uploaded files if exceeding limit
+      for (const file of req.files) {
+        try {
+          await deleteFromCloudinary(file.path);
+        } catch (err) {
+          console.error('Failed to delete excess image:', err);
+        }
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 5 images allowed per product'
+      });
+    }
+
     const productExists = await Product.findOne({ itemCode: itemCode.toUpperCase() });
     if (productExists) {
+      for (const file of req.files) {
+        try {
+          await deleteFromCloudinary(file.path);
+        } catch (err) {
+          console.error('Failed to delete image:', err);
+        }
+      }
       return res.status(400).json({
         success: false,
         message: `Product code ${itemCode} already exists`
       });
     }
 
-    // Get Cloudinary URL from multer (uploaded by cloudinary storage)
-    const itemImage = req.file.path;
+    // Get all Cloudinary URLs from uploaded files (ARRAY)
+    const itemImages = req.files.map(file => file.path);
 
     // Calculate final price (10% discount)
     const basePriceValue = parseFloat(basePrice);
     const finalPrice = basePriceValue * 0.9;
 
+    let weightData;
+    if (req.body.weight) {
+      // If it's a string, parse it
+      if (typeof req.body.weight === 'string') {
+        weightData = JSON.parse(req.body.weight);
+      }
+      // If it's already an object
+      else if (typeof req.body.weight === 'object') {
+        weightData = {
+          netWeight: parseFloat(req.body.weight.netWeight) || 0,
+          grossWeight: parseFloat(req.body.weight.grossWeight) || 0,
+          unit: req.body.weight.unit || 'grams'
+        };
+      }
+    } else {
+      weightData = {
+        netWeight: 0,
+        grossWeight: 0,
+        unit: 'grams'
+      };
+    }
+
     // Create new product
     const product = await Product.create({
       itemname: itemname.trim(),
       itemCode: itemCode.toUpperCase().trim(),
-      itemImage,
+      itemImages,
       basePrice: basePriceValue,
-      finalPrice: finalPrice,
+      finalPrice: finalPrice, 
       category: category || 'all',
       description: description ? description.trim() : '',
-      inStock: true
+      inStock: true,
+      deliveryType: deliveryType || 'ready-to-ship',
+      weight: weightData,
     });
 
 
@@ -148,12 +189,13 @@ export const createProduct = async (req, res) => {
   } catch (error) {
     console.error('Create product error:', error);
 
-    // If product creation fails but image was uploaded, delete from Cloudinary
-    if (req.file && req.file.path) {
-      try {
-        await deleteFromCloudinary(req.file.path);
-      } catch (deleteError) {
-        console.error('Failed to delete orphaned image:', deleteError);
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          await deleteFromCloudinary(file.path);
+        } catch (deleteError) {
+          console.error('Failed to delete orphaned image:', deleteError);
+        }
       }
     }
 
@@ -165,11 +207,9 @@ export const createProduct = async (req, res) => {
 };
 
 /**
- * @desc    Update product
+ * @desc    Update product with MULTIPLE IMAGES support
  * @route   PUT /api/products/:id
  * @access  Private/Admin
- * 
- * FLOW: If new image uploaded → Upload to Cloudinary → Delete old image → Update MongoDB
  */
 export const updateProduct = async (req, res) => {
   try {
@@ -179,7 +219,8 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    const oldImageUrl = product.itemImage;
+    // Store old image URLs for deletion later
+    const oldImageUrls = product.itemImages ? [...product.itemImages] : [product.itemImage];
 
     // Update fields if provided
     product.itemname = req.body.itemname || product.itemname;
@@ -211,15 +252,43 @@ export const updateProduct = async (req, res) => {
     product.category = req.body.category || product.category;
     product.description = req.body.description || product.description;
     product.inStock = req.body.inStock !== undefined ? req.body.inStock : product.inStock;
+    product.deliveryType = req.body.deliveryType || product.deliveryType;
 
-    // Handle image update
-    if (req.file) {
-      product.itemImage = req.file.path;
+    if (req.body.weight) {
+      product.weight = {
+        netWeight: parseFloat(req.body.weight.netWeight) || product.weight.netWeight || 0,
+        grossWeight: parseFloat(req.body.weight.grossWeight) || product.weight.grossWeight || 0,
+        unit: req.body.weight.unit || product.weight.unit || 'grams'
+      };
+    }
 
-      try {
-        await deleteFromCloudinary(oldImageUrl);
-      } catch (deleteError) {
-        console.error('Failed to delete old image:', deleteError);
+    // Handle MULTIPLE image updates
+    if (req.files && req.files.length > 0) {
+      // Validate max 5 images
+      if (req.files.length > 5) {
+        for (const file of req.files) {
+          try {
+            await deleteFromCloudinary(file.path);
+          } catch (err) {
+            console.error('Failed to delete excess image:', err);
+          }
+        }
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 5 images allowed per product'
+        });
+      }
+
+      // Set new images (ARRAY)
+      product.itemImages = req.files.map(file => file.path);
+
+      // Delete old images from Cloudinary
+      for (const oldUrl of oldImageUrls) {
+        try {
+          await deleteFromCloudinary(oldUrl);
+        } catch (deleteError) {
+          console.error('Failed to delete old image:', deleteError);
+        }
       }
     }
 
@@ -231,11 +300,14 @@ export const updateProduct = async (req, res) => {
       product: updatedProduct
     });
   } catch (error) {
-    if (req.file && req.file.path) {
-      try {
-        await deleteFromCloudinary(req.file.path);
-      } catch (deleteError) {
-        console.error('Failed to delete orphaned image:', deleteError);
+    // Cleanup if update fails
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          await deleteFromCloudinary(file.path);
+        } catch (deleteError) {
+          console.error('Failed to delete orphaned image:', deleteError);
+        }
       }
     }
     res.status(500).json({ success: false, message: error.message });
@@ -243,33 +315,33 @@ export const updateProduct = async (req, res) => {
 };
 
 /**
- * @desc    Delete product
+ * @desc    Delete product and ALL its images
  * @route   DELETE /api/products/:id
  * @access  Private/Admin
- * 
- * FLOW: Delete from MongoDB → Delete image from Cloudinary
  */
 export const deleteProduct = async (req, res) => {
   try {
-    // Find product by ID
     const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Store image URL before deleting product
-    const imageUrl = product.itemImage;
+    // Store image URLs before deleting product (handle both old and new schema)
+    const imageUrls = product.itemImages || [product.itemImage];
 
     // Delete product from MongoDB
     await product.deleteOne();
 
-    // Delete image from Cloudinary
-    try {
-      await deleteFromCloudinary(imageUrl);
-    } catch (deleteError) {
-      console.error('Failed to delete image from Cloudinary:', deleteError);
-      // Product is already deleted, so just log the error
+    // Delete ALL images from Cloudinary
+    for (const imageUrl of imageUrls) {
+      if (imageUrl) {
+        try {
+          await deleteFromCloudinary(imageUrl);
+        } catch (deleteError) {
+          console.error('Failed to delete image from Cloudinary:', deleteError);
+        }
+      }
     }
 
     res.json({
@@ -292,7 +364,6 @@ export const getProductsByCategory = async (req, res) => {
 
     const products = await Product.find({ category }).sort({ createdAt: -1 });
 
-    // NO PRICE CALCULATION NEEDED
     res.json({
       success: true,
       count: products.length,
@@ -357,8 +428,12 @@ export const getTrendingProducts = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Search products
+ * @route   GET /api/products/search
+ * @access  Public
+ */
 export const searchProducts = async (req, res) => {
-
   try {
     const { query } = req.query;
 
@@ -381,7 +456,7 @@ export const searchProducts = async (req, res) => {
       ]
     })
       .limit(20)
-      .select('itemname itemCode category itemImage finalPrice basePrice')
+      .select('itemname itemCode category itemImages finalPrice basePrice deliveryType')
       .lean();
 
     const categorySuggestions = await Product.distinct('category', {

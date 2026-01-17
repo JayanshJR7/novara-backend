@@ -16,9 +16,21 @@ const ProductSchema = new mongoose.Schema({
         trim: true
     },
 
-    itemImage: {
+    itemImages: {
+        type: [String],
+        required: [true, 'Please provide at least one item image'],
+        validate: {
+            validator: function (val) {
+                return val.length >= 1 && val.length <= 5;
+            },
+            message: 'Must have between 1 and 5 images'
+        }
+    },
+    deliveryType: {
         type: String,
-        required: [true, 'Please provide item image'],
+        enum: ['ready-to-ship', 'made-to-order'],
+        default: 'ready-to-ship',
+        required: true
     },
 
     basePrice: {
@@ -48,7 +60,7 @@ const ProductSchema = new mongoose.Schema({
         min: 0
     },
     category: {
-        type: String, 
+        type: String,
         required: true,
         trim: true,
         lowercase: true
@@ -62,7 +74,25 @@ const ProductSchema = new mongoose.Schema({
     description: {
         type: String,
         trim: true,
-    }
+    },
+    weight: {
+        netWeight: {
+            type: Number,
+            min: 0,
+            default: 0
+        },
+        grossWeight: {
+            type: Number,
+            min: 0,
+            default: 0
+        },
+        unit: {
+            type: String,
+            enum: ['grams', 'kg'],
+            default: 'grams'
+        }
+    },
+
 }, {
     timestamps: true,
 })

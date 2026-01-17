@@ -24,8 +24,8 @@ router.get('/', getProducts);
 router.get('/:id', getProductById);
 
 // Protected routes
-router.post('/', protect, admin, upload.single('itemImage'), createProduct);
-router.put('/:id', protect, admin, upload.single('itemImage'), updateProduct);
+router.post('/', protect, admin, upload.array('itemImages',5), createProduct);
+router.put('/:id', protect, admin, upload.array('itemImages',5), updateProduct);
 router.delete('/:id', protect, admin, deleteProduct);
 
 export default router;
