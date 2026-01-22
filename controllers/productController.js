@@ -171,7 +171,7 @@ export const createProduct = async (req, res) => {
       itemCode: itemCode.toUpperCase().trim(),
       itemImages,
       basePrice: basePriceValue,
-      finalPrice: finalPrice, 
+      finalPrice: finalPrice,
       category: category || 'all',
       description: description ? description.trim() : '',
       inStock: true,
@@ -382,7 +382,7 @@ export const getProductsByCategory = async (req, res) => {
  */
 export const getTrendingProducts = async (req, res) => {
   try {
-    const limit = Number(req.query.limit) || 12;
+    const limit = Number(req.query.limit) || 35;
 
     const products = await Product.aggregate([
       {
@@ -413,20 +413,26 @@ export const getTrendingProducts = async (req, res) => {
           }
         }
       },
+
+      // 🔥 STEP 1: take top 60 trending
       { $sort: { trendingScore: -1 } },
-      { $limit: limit }
+      { $limit: 60 },
+
+      // 🔥 STEP 2: random 35 from them
+      { $sample: { size: limit } }
     ]);
 
     res.json({
       success: true,
       count: products.length,
-      products: products
+      products
     });
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 /**
  * @desc    Search products
