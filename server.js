@@ -28,7 +28,7 @@ connectDB();
 
 const allowedOrigins = [
   "http://localhost:5173", // local dev
-  "https://novara-frontend.vercel.app" // later (example)
+  "https://novara-frontend.vercel.app" 
 ];
 
 app.use(cors({

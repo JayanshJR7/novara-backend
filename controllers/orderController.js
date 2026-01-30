@@ -2,6 +2,7 @@ import Order from '../models/order.js';
 import Product from '../models/products.js';
 import nodemailer from 'nodemailer';
 import Coupon from '../models/Coupon.js';
+import { sendTelegramMessage } from '../config/telegram.js';
 
 /**
  * Email transporter configuration
@@ -169,6 +170,38 @@ export const createOrder = async (req, res) => {
 
     await order.populate('items.product');
 
+    try {
+      const itemsList = order.items.map((item, idx) =>
+        `${idx + 1}. ${item.product.itemname} x${item.quantity} - ₹${(item.price * item.quantity).toFixed(2)}`
+      ).join('\n');
+
+      const telegramMessage = `
+🛍️ <b>NEW ORDER RECEIVED</b> 🛍️
+
+📦 <b>Order ID:</b> ${order._id}
+👤 <b>Customer:</b> ${order.customerName}
+📧 <b>Email:</b> ${order.email}
+📱 <b>Phone:</b> ${order.phone}
+
+<b>Items:</b>
+${itemsList}
+
+💰 <b>Subtotal:</b> ₹${order.subtotal.toFixed(2)}
+${order.discount > 0 ? `🎟️ <b>Discount:</b> -₹${order.discount.toFixed(2)} ${order.couponCode ? `(${order.couponCode})` : ''}` : ''}
+🚚 <b>Delivery:</b> ${order.deliveryCharge > 0 ? `₹${order.deliveryCharge.toFixed(2)}` : 'FREE'}
+💳 <b>Total:</b> ₹${order.totalAmount.toFixed(2)}
+
+💳 <b>Payment Method:</b> ${order.paymentMethod.toUpperCase()}
+⏳ <b>Payment Status:</b> PENDING
+
+⏰ <b>Time:</b> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+      `.trim();
+
+      await sendTelegramMessage(telegramMessage);
+    } catch (telegramError) {
+      console.error('Telegram notification failed:', telegramError);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Order created successfully. Please complete payment.',
@@ -270,6 +303,9 @@ export const updateOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
+    // ✅ STORE OLD STATUS BEFORE UPDATING
+    const oldStatus = order.orderStatus;
+
     // Update order status if provided
     if (req.body.orderStatus) {
       order.orderStatus = req.body.orderStatus;
@@ -284,7 +320,6 @@ export const updateOrder = async (req, res) => {
     if (req.body.additionalCharges) {
       order.additionalCharges = req.body.additionalCharges;
 
-      // ✅ UPDATE THIS - Recalculate with deliveryCharge and discount
       const additionalTotal = order.additionalCharges.reduce((total, charge) => {
         return total + charge.chargeAmount;
       }, 0);
@@ -313,6 +348,36 @@ export const updateOrder = async (req, res) => {
       } catch (emailError) {
         console.error('Email sending failed:', emailError);
       }
+    }
+
+    // ✅ SEND TELEGRAM NOTIFICATION (FIXED)
+    try {
+      const statusEmojis = {
+        pending: '⏳',
+        confirmed: '✅',
+        processing: '📦',
+        shipped: '🚚',
+        delivered: '🎉',
+        cancelled: '❌'
+      };
+
+      const telegramMessage = `
+${statusEmojis[order.orderStatus] || '📝'} <b>ORDER STATUS UPDATED</b>
+
+📦 <b>Order ID:</b> ${order._id}
+👤 <b>Customer:</b> ${order.customerName}
+
+📊 <b>Old Status:</b> ${oldStatus.toUpperCase()}
+📊 <b>New Status:</b> ${order.orderStatus.toUpperCase()}
+
+${order.trackingNumber ? `🔍 <b>Tracking:</b> ${order.trackingNumber}` : ''}
+
+⏰ <b>Updated at:</b> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+      `.trim();
+
+      await sendTelegramMessage(telegramMessage);
+    } catch (telegramError) {
+      console.error('Telegram notification failed:', telegramError);
     }
 
     res.json({
