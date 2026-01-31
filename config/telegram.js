@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import Order from '../models/order.js';
 import Product from '../models/products.js';
 import User from '../models/user.js';
-import Coupon from '../models/coupon.js';
+import Coupon from '../models/Coupon.js';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
