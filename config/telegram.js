@@ -7,7 +7,8 @@ import Coupon from '../models/Coupon.js';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+const bot = new TelegramBot(TOKEN, process.env.NODE_ENV === 'production' ? {} : { polling: true });
+
 
 // ============================================
 // 🎭 MAYA PERSONALITY & RESPONSES
@@ -24,8 +25,8 @@ const MAYA_RESPONSES = {
   
   timeGreetings: {
     morning: [
-      "☀️ Good morning boss! Coffee pi li? Chaliye business dekhtein!",
-      "🌅 Subah ho gayi! Let's make money today!",
+      "☀️ Good morning boss!",
+      "🌅 Subah ho gayi?  Let's make money today!",
       "🌄 Rise and shine! Aaj ka target kya hai?"
     ],
     afternoon: [

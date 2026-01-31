@@ -3,17 +3,22 @@ import Product from "../models/products.js";
 import SilverPrice from "../models/silverPrice.js";
 
 /**
- * Helper function to calculate real-time price
+ * ✅ CORRECT PRICING FORMULA
  */
 const calculateRealTimePrice = (product, currentSilverPrice) => {
-  if (product.weight && product.weight.silverWeight > 0) {
-    return (
-      product.basePrice +
-      (product.weight.silverWeight * currentSilverPrice) +
-      (product.makingCharge || 0)
-    );
+  if (product.weight && product.weight.netWeight > 0) {
+    const netWeight = product.weight.netWeight;
+    const makingChargeRate = product.makingChargeRate || 0;
+    
+    const silverCost = netWeight * currentSilverPrice;
+    const makingCharges = makingChargeRate * netWeight;
+    const total = product.basePrice + silverCost + makingCharges;
+    const finalPrice = total * 0.9; // 10% discount
+    
+    return parseFloat(finalPrice.toFixed(2));
   }
-  return product.finalPrice;
+  
+  return parseFloat((product.basePrice * 0.9).toFixed(2));
 };
 
 /**
@@ -218,7 +223,7 @@ export const removeItemFromCart = async (req, res) => {
 }
 
 /**
- * @desc    Get user's cart with REAL-TIME calculated prices
+ * @desc    Get user's cart with CORRECT calculated prices
  * @route   GET /api/users/cart
  * @access  Private
  */
@@ -226,7 +231,6 @@ export const getCart = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('cart.product');
 
-    // ✅ Get current silver price
     const silverPrice = await SilverPrice.getLatestPrice();
 
     const cartWithPrices = user.cart.map(item => {
@@ -237,14 +241,14 @@ export const getCart = async (req, res) => {
 
       const productObj = item.product.toObject();
       
-      // ✅ Calculate REAL-TIME price based on current silver rate
+      // Calculate REAL-TIME price with CORRECT formula
       const itemPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
       
       return {
         productId: item.product._id,
         product: {
           ...productObj,
-          finalPrice: itemPrice // Override with real-time price
+          finalPrice: itemPrice
         },
         quantity: item.quantity,
         price: itemPrice,
@@ -270,7 +274,7 @@ export const getCart = async (req, res) => {
 };
 
 /**
- * @desc    Get user's wishlist with REAL-TIME calculated prices
+ * @desc    Get user's wishlist with CORRECT calculated prices
  * @route   GET /api/users/wishlist
  * @access  Private
  */
@@ -278,10 +282,8 @@ export const getWishlist = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate('wishlist');
 
-    // ✅ Get current silver price
     const silverPrice = await SilverPrice.getLatestPrice();
 
-    // ✅ Calculate REAL-TIME prices for wishlist items
     const wishlistWithPrices = user.wishlist.map(product => {
       if (!product) {
         console.error('Wishlist item is null');
@@ -290,7 +292,7 @@ export const getWishlist = async (req, res) => {
 
       const productObj = product.toObject();
 
-      // Calculate real-time price
+      // Calculate REAL-TIME price with CORRECT formula
       productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
 
       return productObj;

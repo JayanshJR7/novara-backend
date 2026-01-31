@@ -3,20 +3,40 @@ import SilverPrice from '../models/silverPrice.js';
 import { deleteFromCloudinary } from '../config/cloudinary.js';
 
 /**
- * Helper function to calculate real-time price based on current silver rate
+ * ✅ CORRECT PRICING FORMULA (as per client's requirement)
+ * 
+ * For products with netWeight > 0:
+ * 1. silverCost = netWeight × silverPricePerGram
+ * 2. makingCharges = makingChargeRate × netWeight
+ * 3. total = basePrice + silverCost + makingCharges
+ * 4. finalPrice = total × 0.9 (10% discount)
+ * 
+ * For products without netWeight:
+ * finalPrice = basePrice × 0.9 (10% discount)
  */
 const calculateRealTimePrice = (product, currentSilverPrice) => {
-  // If product has silver weight, calculate dynamic price
-  if (product.weight && product.weight.silverWeight > 0) {
-    return (
-      product.basePrice +
-      (product.weight.silverWeight * currentSilverPrice) +
-      (product.makingCharge || 0)
-    );
+  // Check if product has net weight for auto-pricing
+  if (product.weight && product.weight.netWeight > 0) {
+    const netWeight = product.weight.netWeight;
+    const makingChargeRate = product.makingChargeRate || 0;
+
+    // Step 1: Calculate silver cost
+    const silverCost = netWeight * currentSilverPrice;
+
+    // Step 2: Calculate making charges
+    const makingCharges = makingChargeRate * netWeight;
+
+    // Step 3: Calculate total
+    const total = product.basePrice + silverCost + makingCharges;
+
+    // Step 4: Apply 10% discount
+    const finalPrice = total * 0.9;
+
+    return parseFloat(finalPrice.toFixed(2));
   }
-  
-  // Otherwise use stored finalPrice (manual pricing with 10% discount)
-  return product.finalPrice;
+
+  // Manual pricing: basePrice with 10% discount
+  return parseFloat((product.basePrice * 0.9).toFixed(2));
 };
 
 /**
@@ -47,16 +67,13 @@ export const getProducts = async (req, res) => {
 
     const products = await Product.find(filter).sort({ createdAt: -1 });
 
-    // ✅ Get current silver price
+    // Get current silver price
     const silverPrice = await SilverPrice.getLatestPrice();
 
-    // ✅ REAL-TIME price calculation for ALL products
+    // Calculate real-time prices
     const productsWithPrice = products.map(product => {
       const productObj = product.toObject();
-
-      // Calculate real-time price based on current silver rate
       productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
-
       return productObj;
     });
 
@@ -93,8 +110,8 @@ export const getProductById = async (req, res) => {
 
     const silverPrice = await SilverPrice.getLatestPrice();
     const productObj = product.toObject();
-    
-    // ✅ Calculate real-time price
+
+    // Calculate real-time price
     productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
 
     res.json({
@@ -109,13 +126,18 @@ export const getProductById = async (req, res) => {
 };
 
 /**
- * @desc    Create new product with MULTIPLE IMAGES
+ * @desc    Create new product
  * @route   POST /api/products
  * @access  Private/Admin
  */
 export const createProduct = async (req, res) => {
   try {
     const { itemname, itemCode, basePrice, category, description, deliveryType, weight } = req.body;
+
+    console.log('========== CREATE PRODUCT DEBUG ==========');
+    console.log('req.body.weight:', req.body.weight);
+    console.log('basePrice:', basePrice);
+    console.log('makingChargeRate:', req.body.makingChargeRate);
 
     if (!itemname) {
       return res.status(400).json({
@@ -145,7 +167,6 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Maximum 5 images validation
     if (req.files.length > 5) {
       for (const file of req.files) {
         try {
@@ -177,36 +198,59 @@ export const createProduct = async (req, res) => {
 
     const itemImages = req.files.map(file => file.path);
 
-    // ✅ Calculate initial finalPrice
+    // Calculate initial finalPrice
     const basePriceValue = parseFloat(basePrice);
     let finalPrice;
 
-    if (weight && weight.silverWeight > 0) {
-      // AUTO-PRICING: basePrice + (silverWeight × silverPrice) + makingCharge
-      const silverPrice = await SilverPrice.getLatestPrice();
-      const silverWeight = parseFloat(weight.silverWeight);
-      const makingCharge = parseFloat(req.body.makingCharge || 0);
+    if (weight && weight.netWeight > 0) {
 
-      finalPrice = basePriceValue + (silverWeight * silverPrice.pricePerGram) + makingCharge;
+      const silverPrice = await SilverPrice.getLatestPrice();
+      console.log('\n📊 CALCULATION INPUTS:');
+      console.log('weight object:', weight);
+      console.log('weight.netWeight:', weight.netWeight);
+      console.log('typeof weight.netWeight:', typeof weight.netWeight);
+      const netWeight = parseFloat(weight.netWeight);
+      const makingChargeRate = parseFloat(req.body.makingChargeRate || 0);
+      console.log('Parsed netWeight:', netWeight);
+      console.log('makingChargeRate:', makingChargeRate);
+      console.log('silverPrice.pricePerGram:', silverPrice.pricePerGram);
+
+      const silverCost = netWeight * silverPrice.pricePerGram;
+      const makingCharges = makingChargeRate * netWeight;
+      const total = basePriceValue + silverCost + makingCharges;
+      finalPrice = total * 0.9; // 10% discount
+      console.log('\n💰 CALCULATION STEPS:');
+      console.log('basePrice:', basePriceValue);
+      console.log('silverCost:', silverCost);
+      console.log('makingCharges:', makingCharges);
+      console.log('total:', total);
+      console.log('finalPrice:', finalPrice);
     } else {
-      // MANUAL PRICING: Apply 10% discount to basePrice
-      finalPrice = basePriceValue * 0.9;
+      // MANUAL PRICING
+      finalPrice = basePriceValue * 0.9; // 10% discount
+      console.log('\n📝 MANUAL PRICING:', finalPrice);
     }
 
-    // Create new product
+    // Create product
     const product = await Product.create({
       itemname: itemname.trim(),
       itemCode: itemCode.toUpperCase().trim(),
       itemImages,
       basePrice: basePriceValue,
-      finalPrice: finalPrice, // Store initial price (will be recalculated on fetch)
-      makingCharge: parseFloat(req.body.makingCharge) || 0,
+      finalPrice: parseFloat(finalPrice.toFixed(2)),
+      makingChargeRate: parseFloat(req.body.makingChargeRate) || 0,
       category: category || 'all',
       description: description ? description.trim() : '',
       inStock: true,
       deliveryType: deliveryType || 'ready-to-ship',
-      weight: weight || { silverWeight: 0, grossWeight: 0, unit: 'grams' }
+      weight: weight || { silverWeight: 0, netWeight: 0, grossWeight: 0, unit: 'grams' }
     });
+
+    console.log('\n✅ PRODUCT SAVED:');
+    console.log('Saved weight:', product.weight);
+    console.log('Saved finalPrice:', product.finalPrice);
+    console.log('==========================================\n');
+
 
     res.status(201).json({
       success: true,
@@ -235,7 +279,7 @@ export const createProduct = async (req, res) => {
 };
 
 /**
- * @desc    Update product with MULTIPLE IMAGES support
+ * @desc    Update product
  * @route   PUT /api/products/:id
  * @access  Private/Admin
  */
@@ -269,20 +313,23 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // ✅ Update basePrice and recalculate finalPrice
+    // Update basePrice and recalculate finalPrice
     if (req.body.basePrice !== undefined) {
       const newBasePrice = parseFloat(req.body.basePrice);
       product.basePrice = newBasePrice;
 
-      // Recalculate finalPrice
-      if (req.body.weight && parseFloat(req.body.weight.silverWeight) > 0) {
+      // Recalculate with correct formula
+      if (req.body.weight && parseFloat(req.body.weight.netWeight) > 0) {
         const silverPrice = await SilverPrice.getLatestPrice();
-        const silverWeight = parseFloat(req.body.weight.silverWeight);
-        const makingCharge = parseFloat(req.body.makingCharge || product.makingCharge || 0);
-        
-        product.finalPrice = newBasePrice + (silverWeight * silverPrice.pricePerGram) + makingCharge;
+        const netWeight = parseFloat(req.body.weight.netWeight);
+        const makingChargeRate = parseFloat(req.body.makingChargeRate || product.makingChargeRate || 0);
+
+        const silverCost = netWeight * silverPrice.pricePerGram;
+        const makingCharges = makingChargeRate * netWeight;
+        const total = newBasePrice + silverCost + makingCharges;
+        product.finalPrice = parseFloat((total * 0.9).toFixed(2));
       } else {
-        product.finalPrice = newBasePrice * 0.9; // 10% discount
+        product.finalPrice = parseFloat((newBasePrice * 0.9).toFixed(2));
       }
     }
 
@@ -294,13 +341,14 @@ export const updateProduct = async (req, res) => {
     if (req.body.weight) {
       product.weight = {
         silverWeight: parseFloat(req.body.weight.silverWeight) || product.weight.silverWeight || 0,
+        netWeight: parseFloat(req.body.weight.netWeight) || product.weight.netWeight || 0,
         grossWeight: parseFloat(req.body.weight.grossWeight) || product.weight.grossWeight || 0,
         unit: req.body.weight.unit || product.weight.unit || 'grams'
       };
     }
 
-    if (req.body.makingCharge !== undefined) {
-      product.makingCharge = parseFloat(req.body.makingCharge);
+    if (req.body.makingChargeRate !== undefined) {
+      product.makingChargeRate = parseFloat(req.body.makingChargeRate);
     }
 
     // Handle image updates
@@ -352,7 +400,7 @@ export const updateProduct = async (req, res) => {
 };
 
 /**
- * @desc    Delete product and ALL its images
+ * @desc    Delete product
  * @route   DELETE /api/products/:id
  * @access  Private/Admin
  */
@@ -397,8 +445,7 @@ export const getProductsByCategory = async (req, res) => {
     const { category } = req.params;
 
     const products = await Product.find({ category }).sort({ createdAt: -1 });
-    
-    // ✅ Calculate real-time prices
+
     const silverPrice = await SilverPrice.getLatestPrice();
     const productsWithPrice = products.map(product => {
       const productObj = product.toObject();
@@ -460,7 +507,6 @@ export const getTrendingProducts = async (req, res) => {
       { $sample: { size: limit } }
     ]);
 
-    // ✅ Calculate real-time prices
     const silverPrice = await SilverPrice.getLatestPrice();
     const productsWithPrice = products.map(product => {
       product.finalPrice = calculateRealTimePrice(product, silverPrice.pricePerGram);
@@ -506,10 +552,9 @@ export const searchProducts = async (req, res) => {
       ]
     })
       .limit(20)
-      .select('itemname itemCode category itemImages finalPrice basePrice deliveryType weight makingCharge')
+      .select('itemname itemCode category itemImages finalPrice basePrice deliveryType weight makingChargeRate')
       .lean();
 
-    // ✅ Calculate real-time prices
     const silverPrice = await SilverPrice.getLatestPrice();
     const productsWithPrice = products.map(product => {
       product.finalPrice = calculateRealTimePrice(product, silverPrice.pricePerGram);
@@ -531,9 +576,8 @@ export const searchProducts = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Search error:', error.message);
-    console.error('❌ Full error:', error);
 
-    return res.status(500).json({
+    return res.status(200).json({
       success: false,
       message: 'Search failed: ' + error.message,
       products: [],

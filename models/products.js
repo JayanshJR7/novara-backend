@@ -74,16 +74,26 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    
+    // ✅ UPDATED WEIGHT STRUCTURE
     weight: {
         silverWeight: {
             type: Number,
             min: 0,
-            default: 0
+            default: 0,
+            description: 'Pure silver content weight'
+        },
+        netWeight: {
+            type: Number,
+            min: 0,
+            default: 0,
+            description: 'Net weight used for pricing (usually same as silverWeight or can be different)'
         },
         grossWeight: {
             type: Number,
             min: 0,
-            default: 0
+            default: 0,
+            description: 'Total weight including all components'
         },
         unit: {
             type: String,
@@ -91,10 +101,12 @@ const ProductSchema = new mongoose.Schema({
             default: 'grams'
         }
     },
-    makingCharge: {
+    
+    makingChargeRate: {
         type: Number,
         default: 0,
-        min: 0
+        min: 0,
+        description: 'Making charge per gram (e.g., ₹560/gram)'
     },
 
 }, {
@@ -106,7 +118,3 @@ ProductSchema.set('toObject', { virtuals: true });
 
 const Product = mongoose.model('Product', ProductSchema);
 export default Product;
-
-
-
-
