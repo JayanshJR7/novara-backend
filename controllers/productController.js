@@ -3,6 +3,23 @@ import SilverPrice from '../models/silverPrice.js';
 import { deleteFromCloudinary } from '../config/cloudinary.js';
 
 /**
+ * Helper function to calculate real-time price based on current silver rate
+ */
+const calculateRealTimePrice = (product, currentSilverPrice) => {
+  // If product has silver weight, calculate dynamic price
+  if (product.weight && product.weight.silverWeight > 0) {
+    return (
+      product.basePrice +
+      (product.weight.silverWeight * currentSilverPrice) +
+      (product.makingCharge || 0)
+    );
+  }
+  
+  // Otherwise use stored finalPrice (manual pricing with 10% discount)
+  return product.finalPrice;
+};
+
+/**
  * @desc    Get all products with filters
  * @route   GET /api/products
  * @access  Public
@@ -33,18 +50,12 @@ export const getProducts = async (req, res) => {
     // ✅ Get current silver price
     const silverPrice = await SilverPrice.getLatestPrice();
 
-    // ✅ Recalculate prices for products with silver weight
+    // ✅ REAL-TIME price calculation for ALL products
     const productsWithPrice = products.map(product => {
       const productObj = product.toObject();
 
-      // If product has silver weight, recalculate
-      if (productObj.weight && productObj.weight.silverWeight > 0) {
-        productObj.finalPrice =
-          productObj.basePrice +
-          (productObj.weight.silverWeight * silverPrice.pricePerGram) +
-          (productObj.makingCharge || 0);
-      }
-      // Otherwise, use stored finalPrice (manual pricing)
+      // Calculate real-time price based on current silver rate
+      productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
 
       return productObj;
     });
@@ -73,6 +84,7 @@ export const getProductById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
+    // Increment view count
     await Product.findByIdAndUpdate(
       req.params.id,
       { $inc: { views: 1 } },
@@ -82,13 +94,8 @@ export const getProductById = async (req, res) => {
     const silverPrice = await SilverPrice.getLatestPrice();
     const productObj = product.toObject();
     
-    // ✅ Recalculate if has silver weight
-    if (productObj.weight && productObj.weight.silverWeight > 0) {
-      productObj.finalPrice = 
-        productObj.basePrice + 
-        (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
-        (productObj.makingCharge || 0);
-    }
+    // ✅ Calculate real-time price
+    productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
 
     res.json({
       success: true,
@@ -140,7 +147,6 @@ export const createProduct = async (req, res) => {
 
     // Maximum 5 images validation
     if (req.files.length > 5) {
-      // Delete uploaded files if exceeding limit
       for (const file of req.files) {
         try {
           await deleteFromCloudinary(file.path);
@@ -169,22 +175,21 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    // Get all Cloudinary URLs from uploaded files (ARRAY)
     const itemImages = req.files.map(file => file.path);
 
-    // ✅ Calculate final price based on silver weight or manual pricing
+    // ✅ Calculate initial finalPrice
     const basePriceValue = parseFloat(basePrice);
     let finalPrice;
 
     if (weight && weight.silverWeight > 0) {
-      // ✅ AUTO-PRICING: basePrice + (silverWeight × silverPrice) + makingCharge
+      // AUTO-PRICING: basePrice + (silverWeight × silverPrice) + makingCharge
       const silverPrice = await SilverPrice.getLatestPrice();
       const silverWeight = parseFloat(weight.silverWeight);
       const makingCharge = parseFloat(req.body.makingCharge || 0);
 
       finalPrice = basePriceValue + (silverWeight * silverPrice.pricePerGram) + makingCharge;
     } else {
-      // ✅ MANUAL PRICING: Apply 10% discount to basePrice
+      // MANUAL PRICING: Apply 10% discount to basePrice
       finalPrice = basePriceValue * 0.9;
     }
 
@@ -194,7 +199,7 @@ export const createProduct = async (req, res) => {
       itemCode: itemCode.toUpperCase().trim(),
       itemImages,
       basePrice: basePriceValue,
-      finalPrice: finalPrice,
+      finalPrice: finalPrice, // Store initial price (will be recalculated on fetch)
       makingCharge: parseFloat(req.body.makingCharge) || 0,
       category: category || 'all',
       description: description ? description.trim() : '',
@@ -242,10 +247,9 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Store old image URLs for deletion later
     const oldImageUrls = product.itemImages ? [...product.itemImages] : [product.itemImage];
 
-    // Update fields if provided
+    // Update fields
     product.itemname = req.body.itemname || product.itemname;
 
     if (req.body.itemCode) {
@@ -270,7 +274,7 @@ export const updateProduct = async (req, res) => {
       const newBasePrice = parseFloat(req.body.basePrice);
       product.basePrice = newBasePrice;
 
-      // ✅ Recalculate finalPrice based on weight
+      // Recalculate finalPrice
       if (req.body.weight && parseFloat(req.body.weight.silverWeight) > 0) {
         const silverPrice = await SilverPrice.getLatestPrice();
         const silverWeight = parseFloat(req.body.weight.silverWeight);
@@ -278,7 +282,7 @@ export const updateProduct = async (req, res) => {
         
         product.finalPrice = newBasePrice + (silverWeight * silverPrice.pricePerGram) + makingCharge;
       } else {
-        product.finalPrice = newBasePrice * 0.9; // 10% discount for manual pricing
+        product.finalPrice = newBasePrice * 0.9; // 10% discount
       }
     }
 
@@ -299,9 +303,8 @@ export const updateProduct = async (req, res) => {
       product.makingCharge = parseFloat(req.body.makingCharge);
     }
 
-    // Handle MULTIPLE image updates
+    // Handle image updates
     if (req.files && req.files.length > 0) {
-      // Validate max 5 images
       if (req.files.length > 5) {
         for (const file of req.files) {
           try {
@@ -316,10 +319,8 @@ export const updateProduct = async (req, res) => {
         });
       }
 
-      // Set new images (ARRAY)
       product.itemImages = req.files.map(file => file.path);
 
-      // Delete old images from Cloudinary
       for (const oldUrl of oldImageUrls) {
         try {
           await deleteFromCloudinary(oldUrl);
@@ -337,7 +338,6 @@ export const updateProduct = async (req, res) => {
       product: updatedProduct
     });
   } catch (error) {
-    // Cleanup if update fails
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         try {
@@ -364,13 +364,10 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Store image URLs before deleting product (handle both old and new schema)
     const imageUrls = product.itemImages || [product.itemImage];
 
-    // Delete product from MongoDB
     await product.deleteOne();
 
-    // Delete ALL images from Cloudinary
     for (const imageUrl of imageUrls) {
       if (imageUrl) {
         try {
@@ -400,12 +397,20 @@ export const getProductsByCategory = async (req, res) => {
     const { category } = req.params;
 
     const products = await Product.find({ category }).sort({ createdAt: -1 });
+    
+    // ✅ Calculate real-time prices
+    const silverPrice = await SilverPrice.getLatestPrice();
+    const productsWithPrice = products.map(product => {
+      const productObj = product.toObject();
+      productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
+      return productObj;
+    });
 
     res.json({
       success: true,
-      count: products.length,
+      count: productsWithPrice.length,
       category,
-      products: products
+      products: productsWithPrice
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -450,19 +455,22 @@ export const getTrendingProducts = async (req, res) => {
           }
         }
       },
-
-      // 🔥 STEP 1: take top 60 trending
       { $sort: { trendingScore: -1 } },
       { $limit: 60 },
-
-      // 🔥 STEP 2: random 35 from them
       { $sample: { size: limit } }
     ]);
 
+    // ✅ Calculate real-time prices
+    const silverPrice = await SilverPrice.getLatestPrice();
+    const productsWithPrice = products.map(product => {
+      product.finalPrice = calculateRealTimePrice(product, silverPrice.pricePerGram);
+      return product;
+    });
+
     res.json({
       success: true,
-      count: products.length,
-      products
+      count: productsWithPrice.length,
+      products: productsWithPrice
     });
 
   } catch (error) {
@@ -498,18 +506,25 @@ export const searchProducts = async (req, res) => {
       ]
     })
       .limit(20)
-      .select('itemname itemCode category itemImages finalPrice basePrice deliveryType')
+      .select('itemname itemCode category itemImages finalPrice basePrice deliveryType weight makingCharge')
       .lean();
+
+    // ✅ Calculate real-time prices
+    const silverPrice = await SilverPrice.getLatestPrice();
+    const productsWithPrice = products.map(product => {
+      product.finalPrice = calculateRealTimePrice(product, silverPrice.pricePerGram);
+      return product;
+    });
 
     const categorySuggestions = await Product.distinct('category', {
       category: { $regex: searchTerm, $options: 'i' }
     });
 
-    const categories = [...new Set(products.map(p => p.category))];
+    const categories = [...new Set(productsWithPrice.map(p => p.category))];
 
     return res.status(200).json({
       success: true,
-      products,
+      products: productsWithPrice,
       categories,
       suggestions: categorySuggestions
     });

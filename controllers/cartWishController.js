@@ -3,6 +3,20 @@ import Product from "../models/products.js";
 import SilverPrice from "../models/silverPrice.js";
 
 /**
+ * Helper function to calculate real-time price
+ */
+const calculateRealTimePrice = (product, currentSilverPrice) => {
+  if (product.weight && product.weight.silverWeight > 0) {
+    return (
+      product.basePrice +
+      (product.weight.silverWeight * currentSilverPrice) +
+      (product.makingCharge || 0)
+    );
+  }
+  return product.finalPrice;
+};
+
+/**
  * @desc    Add item to wishlist
  * @route   POST /api/users/wishlist/:productId
  * @access  Private
@@ -11,7 +25,6 @@ export const addToWishlist = async (req, res) => {
   try {
     const { productID } = req.params;
 
-    //check if product exists
     let product = await Product.findById(productID);
     if (!product) {
       return res.status(404).json({
@@ -20,10 +33,8 @@ export const addToWishlist = async (req, res) => {
       })
     }
 
-    // find user
     const user = await User.findById(req.user._id);
 
-    // check if product is already in wishlist
     if (user.wishlist.includes(productID)) {
       return res.status(400).json({
         success: false,
@@ -31,7 +42,6 @@ export const addToWishlist = async (req, res) => {
       })
     }
 
-    //add to wishlist
     user.wishlist.push(productID)
     await user.save();
 
@@ -56,10 +66,8 @@ export const addToWishlist = async (req, res) => {
 export const removeFromWishlist = async (req, res) => {
   try {
     const { productId } = req.params;
-    //find user
     const user = await User.findById(req.user._id);
 
-    //remove from wishlist
     user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
     await user.save()
 
@@ -85,7 +93,6 @@ export const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-    // Validate input
     if (!productId || !quantity || quantity < 1) {
       return res.status(400).json({
         success: false,
@@ -93,13 +100,11 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    // Check if product exists
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Check stock
     if (!product.inStock) {
       return res.status(400).json({
         success: false,
@@ -107,19 +112,15 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findById(req.user._id);
 
-    // Check if product already in cart
     const cartItemIndex = user.cart.findIndex(
       item => item.product.toString() === productId
     );
 
     if (cartItemIndex > -1) {
-      // Update quantity if already in cart
       user.cart[cartItemIndex].quantity += parseInt(quantity);
     } else {
-      // Add new item to cart
       user.cart.push({
         product: productId,
         quantity: parseInt(quantity)
@@ -150,7 +151,6 @@ export const updateCartItem = async (req, res) => {
     const { productId } = req.params;
     const { quantity } = req.body;
 
-    // Validate quantity
     if (!quantity || quantity < 1) {
       return res.status(400).json({
         success: false,
@@ -158,10 +158,8 @@ export const updateCartItem = async (req, res) => {
       })
     }
 
-    // Find user 
     const user = await User.findById(req.user._id);
 
-    // Find cart item
     const cartItem = user.cart.find(item => item.product.toString() === productId);
 
     if (!cartItem) {
@@ -171,7 +169,6 @@ export const updateCartItem = async (req, res) => {
       })
     }
 
-    // Update quantity
     cartItem.quantity = quantity;
 
     await user.save();
@@ -200,10 +197,8 @@ export const removeItemFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    // Find user
     const user = await User.findById(req.user._id);
 
-    // Remove from cart
     user.cart = user.cart.filter(item => item.product.toString() !== productId);
     await user.save();
 
@@ -223,7 +218,7 @@ export const removeItemFromCart = async (req, res) => {
 }
 
 /**
- * @desc    Get user's cart with calculated prices
+ * @desc    Get user's cart with REAL-TIME calculated prices
  * @route   GET /api/users/cart
  * @access  Private
  */
@@ -242,20 +237,15 @@ export const getCart = async (req, res) => {
 
       const productObj = item.product.toObject();
       
-      // ✅ Calculate price based on silver weight or use finalPrice
-      let itemPrice;
-      if (productObj.weight && productObj.weight.silverWeight > 0) {
-        itemPrice = 
-          productObj.basePrice + 
-          (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
-          (productObj.makingCharge || 0);
-      } else {
-        itemPrice = productObj.finalPrice;
-      }
+      // ✅ Calculate REAL-TIME price based on current silver rate
+      const itemPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
       
       return {
         productId: item.product._id,
-        product: productObj,
+        product: {
+          ...productObj,
+          finalPrice: itemPrice // Override with real-time price
+        },
         quantity: item.quantity,
         price: itemPrice,
         itemTotal: itemPrice * item.quantity
@@ -280,19 +270,18 @@ export const getCart = async (req, res) => {
 };
 
 /**
- * @desc    Get user's wishlist with calculated prices
+ * @desc    Get user's wishlist with REAL-TIME calculated prices
  * @route   GET /api/users/wishlist
  * @access  Private
  */
 export const getWishlist = async (req, res) => {
   try {
-    // Find user and populate wishlist with full product details
     const user = await User.findById(req.user._id).populate('wishlist');
 
     // ✅ Get current silver price
     const silverPrice = await SilverPrice.getLatestPrice();
 
-    // Map wishlist items with calculated finalPrice
+    // ✅ Calculate REAL-TIME prices for wishlist items
     const wishlistWithPrices = user.wishlist.map(product => {
       if (!product) {
         console.error('Wishlist item is null');
@@ -301,13 +290,8 @@ export const getWishlist = async (req, res) => {
 
       const productObj = product.toObject();
 
-      // ✅ Calculate price based on silver weight or use finalPrice
-      if (productObj.weight && productObj.weight.silverWeight > 0) {
-        productObj.finalPrice = 
-          productObj.basePrice + 
-          (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
-          (productObj.makingCharge || 0);
-      }
+      // Calculate real-time price
+      productObj.finalPrice = calculateRealTimePrice(productObj, silverPrice.pricePerGram);
 
       return productObj;
     }).filter(item => item !== null);
@@ -331,7 +315,6 @@ export const getWishlist = async (req, res) => {
  */
 export const clearCart = async (req, res) => {
   try {
-    // Find user and clear the cart
     const user = await User.findById(req.user._id);
     user.cart = [];
     await user.save();
