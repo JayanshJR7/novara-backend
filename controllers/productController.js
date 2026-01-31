@@ -1,4 +1,5 @@
 import Product from '../models/products.js';
+import SilverPrice from '../models/silverPrice.js';
 import { deleteFromCloudinary } from '../config/cloudinary.js';
 
 /**
@@ -29,10 +30,30 @@ export const getProducts = async (req, res) => {
 
     const products = await Product.find(filter).sort({ createdAt: -1 });
 
+    // ✅ Get current silver price
+    const silverPrice = await SilverPrice.getLatestPrice();
+
+    // ✅ Recalculate prices for products with silver weight
+    const productsWithPrice = products.map(product => {
+      const productObj = product.toObject();
+
+      // If product has silver weight, recalculate
+      if (productObj.weight && productObj.weight.silverWeight > 0) {
+        productObj.finalPrice =
+          productObj.basePrice +
+          (productObj.weight.silverWeight * silverPrice.pricePerGram) +
+          (productObj.makingCharge || 0);
+      }
+      // Otherwise, use stored finalPrice (manual pricing)
+
+      return productObj;
+    });
+
     res.json({
       success: true,
-      count: products.length,
-      products: products
+      count: productsWithPrice.length,
+      silverPrice: silverPrice.pricePerGram,
+      products: productsWithPrice
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -58,9 +79,21 @@ export const getProductById = async (req, res) => {
       { new: false }
     );
 
+    const silverPrice = await SilverPrice.getLatestPrice();
+    const productObj = product.toObject();
+    
+    // ✅ Recalculate if has silver weight
+    if (productObj.weight && productObj.weight.silverWeight > 0) {
+      productObj.finalPrice = 
+        productObj.basePrice + 
+        (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
+        (productObj.makingCharge || 0);
+    }
+
     res.json({
       success: true,
-      product: product
+      product: productObj,
+      silverPrice: silverPrice.pricePerGram
     });
 
   } catch (error) {
@@ -75,7 +108,7 @@ export const getProductById = async (req, res) => {
  */
 export const createProduct = async (req, res) => {
   try {
-    const { itemname, itemCode, basePrice, category, description, deliveryType } = req.body;
+    const { itemname, itemCode, basePrice, category, description, deliveryType, weight } = req.body;
 
     if (!itemname) {
       return res.status(400).json({
@@ -139,30 +172,20 @@ export const createProduct = async (req, res) => {
     // Get all Cloudinary URLs from uploaded files (ARRAY)
     const itemImages = req.files.map(file => file.path);
 
-    // Calculate final price (10% discount)
+    // ✅ Calculate final price based on silver weight or manual pricing
     const basePriceValue = parseFloat(basePrice);
-    const finalPrice = basePriceValue * 0.9;
+    let finalPrice;
 
-    let weightData;
-    if (req.body.weight) {
-      // If it's a string, parse it
-      if (typeof req.body.weight === 'string') {
-        weightData = JSON.parse(req.body.weight);
-      }
-      // If it's already an object
-      else if (typeof req.body.weight === 'object') {
-        weightData = {
-          silverWeight: parseFloat(req.body.weight.silverWeight) || 0,
-          grossWeight: parseFloat(req.body.weight.grossWeight) || 0,
-          unit: req.body.weight.unit || 'grams'
-        };
-      }
+    if (weight && weight.silverWeight > 0) {
+      // ✅ AUTO-PRICING: basePrice + (silverWeight × silverPrice) + makingCharge
+      const silverPrice = await SilverPrice.getLatestPrice();
+      const silverWeight = parseFloat(weight.silverWeight);
+      const makingCharge = parseFloat(req.body.makingCharge || 0);
+
+      finalPrice = basePriceValue + (silverWeight * silverPrice.pricePerGram) + makingCharge;
     } else {
-      weightData = {
-        silverWeight: 0,
-        grossWeight: 0,
-        unit: 'grams'
-      };
+      // ✅ MANUAL PRICING: Apply 10% discount to basePrice
+      finalPrice = basePriceValue * 0.9;
     }
 
     // Create new product
@@ -172,13 +195,13 @@ export const createProduct = async (req, res) => {
       itemImages,
       basePrice: basePriceValue,
       finalPrice: finalPrice,
+      makingCharge: parseFloat(req.body.makingCharge) || 0,
       category: category || 'all',
       description: description ? description.trim() : '',
       inStock: true,
       deliveryType: deliveryType || 'ready-to-ship',
-      weight: weightData,
+      weight: weight || { silverWeight: 0, grossWeight: 0, unit: 'grams' }
     });
-
 
     res.status(201).json({
       success: true,
@@ -242,11 +265,21 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Update basePrice and recalculate finalPrice
+    // ✅ Update basePrice and recalculate finalPrice
     if (req.body.basePrice !== undefined) {
       const newBasePrice = parseFloat(req.body.basePrice);
       product.basePrice = newBasePrice;
-      product.finalPrice = newBasePrice * 0.9; // Recalculate with 10% discount
+
+      // ✅ Recalculate finalPrice based on weight
+      if (req.body.weight && parseFloat(req.body.weight.silverWeight) > 0) {
+        const silverPrice = await SilverPrice.getLatestPrice();
+        const silverWeight = parseFloat(req.body.weight.silverWeight);
+        const makingCharge = parseFloat(req.body.makingCharge || product.makingCharge || 0);
+        
+        product.finalPrice = newBasePrice + (silverWeight * silverPrice.pricePerGram) + makingCharge;
+      } else {
+        product.finalPrice = newBasePrice * 0.9; // 10% discount for manual pricing
+      }
     }
 
     product.category = req.body.category || product.category;
@@ -260,6 +293,10 @@ export const updateProduct = async (req, res) => {
         grossWeight: parseFloat(req.body.weight.grossWeight) || product.weight.grossWeight || 0,
         unit: req.body.weight.unit || product.weight.unit || 'grams'
       };
+    }
+
+    if (req.body.makingCharge !== undefined) {
+      product.makingCharge = parseFloat(req.body.makingCharge);
     }
 
     // Handle MULTIPLE image updates
@@ -432,7 +469,6 @@ export const getTrendingProducts = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 /**
  * @desc    Search products

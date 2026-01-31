@@ -1,51 +1,51 @@
 import User from "../models/user.js";
 import Product from "../models/products.js";
+import SilverPrice from "../models/silverPrice.js";
 
 /**
  * @desc    Add item to wishlist
  * @route   POST /api/users/wishlist/:productId
  * @access  Private
  */
-
 export const addToWishlist = async (req, res) => {
-    try {
-        const { productID } = req.params;
+  try {
+    const { productID } = req.params;
 
-        //check if product exists
-        let product = await Product.findById(productID);
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: "Product not found"
-            })
-        }
-
-        // find user
-        const user = await User.findById(req.user._id);
-
-        // check if product is already in wishlist
-        if (user.wishlist.includes(productID)) {
-            return res.status(400).json({
-                success: false,
-                message: "Product already in wishlist"
-            })
-        }
-
-        //add to wishlist
-        user.wishlist.push(productID)
-        await user.save();
-
-        res.json({
-            success: true,
-            message: "Product added to wishlist",
-            wishlist: user.wishlist,
-        })
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        })
+    //check if product exists
+    let product = await Product.findById(productID);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      })
     }
+
+    // find user
+    const user = await User.findById(req.user._id);
+
+    // check if product is already in wishlist
+    if (user.wishlist.includes(productID)) {
+      return res.status(400).json({
+        success: false,
+        message: "Product already in wishlist"
+      })
+    }
+
+    //add to wishlist
+    user.wishlist.push(productID)
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Product added to wishlist",
+      wishlist: user.wishlist,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
 }
 
 /**
@@ -53,28 +53,27 @@ export const addToWishlist = async (req, res) => {
  * @route   DELETE /api/users/wishlist/:productId
  * @access  Private
  */
-
 export const removeFromWishlist = async (req, res) => {
-    try {
-        const { productId } = req.params;  
-        //find user
-        const user = await User.findById(req.user._id);
+  try {
+    const { productId } = req.params;
+    //find user
+    const user = await User.findById(req.user._id);
 
-        //remove from wishlist
-        user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
-        await user.save()
+    //remove from wishlist
+    user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
+    await user.save()
 
-        res.json({
-            success: true,
-            message: "Product removed from wishlist",
-            wishlist: user.wishlist,
-        })
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        })
-    }
+    res.json({
+      success: true,
+      message: "Product removed from wishlist",
+      wishlist: user.wishlist,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
 }
 
 /**
@@ -82,17 +81,15 @@ export const removeFromWishlist = async (req, res) => {
  * @route   POST /api/users/cart
  * @access  Private
  */
-
 export const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-
     // Validate input
     if (!productId || !quantity || quantity < 1) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please provide valid product and quantity' 
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide valid product and quantity'
       });
     }
 
@@ -104,9 +101,9 @@ export const addToCart = async (req, res) => {
 
     // Check stock
     if (!product.inStock) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Product is out of stock' 
+      return res.status(400).json({
+        success: false,
+        message: 'Product is out of stock'
       });
     }
 
@@ -123,9 +120,9 @@ export const addToCart = async (req, res) => {
       user.cart[cartItemIndex].quantity += parseInt(quantity);
     } else {
       // Add new item to cart
-      user.cart.push({ 
-        product: productId, 
-        quantity: parseInt(quantity) 
+      user.cart.push({
+        product: productId,
+        quantity: parseInt(quantity)
       });
     }
 
@@ -143,108 +140,99 @@ export const addToCart = async (req, res) => {
   }
 };
 
-
 /**
  * @desc    Update cart item quantity
  * @route   PUT /api/users/cart/:productId
  * @access  Private
  */
+export const updateCartItem = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity } = req.body;
 
-export const updateCartItem = async(req, res) => {
-    try {
-        const { productId } = req.params;  // FIXED: Changed from productID to productId
-        const { quantity } = req.body;
-
-
-        // Validate quantity
-        if (!quantity || quantity < 1) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide valid quantity"
-            })
-        }
-
-        // Find user 
-        const user = await User.findById(req.user._id);
-
-        // Find cart item
-        const cartItem = user.cart.find(item => item.product.toString() === productId);
-
-        if (!cartItem) {
-            return res.status(404).json({  // FIXED: was res(400) which is incorrect
-                success: false,
-                message: "Product not found in cart"
-            })
-        }
-
-        // Update quantity
-        cartItem.quantity = quantity;
-
-        await user.save();
-        await user.populate('cart.product');
-
-        res.json({
-            success: true,
-            message: "Cart item updated",
-            cart: user.cart,
-        })
-    } catch (error) {
-        console.error('Update cart item error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        })
+    // Validate quantity
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid quantity"
+      })
     }
-}
 
+    // Find user 
+    const user = await User.findById(req.user._id);
+
+    // Find cart item
+    const cartItem = user.cart.find(item => item.product.toString() === productId);
+
+    if (!cartItem) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found in cart"
+      })
+    }
+
+    // Update quantity
+    cartItem.quantity = quantity;
+
+    await user.save();
+    await user.populate('cart.product');
+
+    res.json({
+      success: true,
+      message: "Cart item updated",
+      cart: user.cart,
+    })
+  } catch (error) {
+    console.error('Update cart item error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
+}
 
 /**
  * @desc    Remove item from cart
  * @route   DELETE /api/users/cart/:productId
  * @access  Private
  */
+export const removeItemFromCart = async (req, res) => {
+  try {
+    const { productId } = req.params;
 
-export const removeItemFromCart = async(req, res) => {
-    try {
-        const { productId } = req.params;  // FIXED: Changed from productID to productId
+    // Find user
+    const user = await User.findById(req.user._id);
 
-        // Find user
-        const user = await User.findById(req.user._id);
+    // Remove from cart
+    user.cart = user.cart.filter(item => item.product.toString() !== productId);
+    await user.save();
 
-        // Remove from cart
-        user.cart = user.cart.filter(item => item.product.toString() !== productId);
-        await user.save();
+    res.json({
+      success: true,
+      message: "Product removed from cart",
+      cart: user.cart,
+    })
 
-        res.json({
-            success: true,
-            message: "Product removed from cart",
-            cart: user.cart,
-        })
-        
-    } catch (error) {
-        console.error('Remove from cart error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        })
-    }
+  } catch (error) {
+    console.error('Remove from cart error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
 }
 
 /**
- * @desc    Get user's cart
- * @route   GET /api/users/cart
- * @access  Private
- */
-
-/**
- * @desc    Get user's cart
+ * @desc    Get user's cart with calculated prices
  * @route   GET /api/users/cart
  * @access  Private
  */
 export const getCart = async (req, res) => {
   try {
-    // Find user and populate cart with full product details
     const user = await User.findById(req.user._id).populate('cart.product');
+
+    // ✅ Get current silver price
+    const silverPrice = await SilverPrice.getLatestPrice();
 
     const cartWithPrices = user.cart.map(item => {
       if (!item.product) {
@@ -253,16 +241,27 @@ export const getCart = async (req, res) => {
       }
 
       const productObj = item.product.toObject();
+      
+      // ✅ Calculate price based on silver weight or use finalPrice
+      let itemPrice;
+      if (productObj.weight && productObj.weight.silverWeight > 0) {
+        itemPrice = 
+          productObj.basePrice + 
+          (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
+          (productObj.makingCharge || 0);
+      } else {
+        itemPrice = productObj.finalPrice;
+      }
+      
       return {
         productId: item.product._id,
         product: productObj,
         quantity: item.quantity,
-        price: productObj.finalPrice,
-        itemTotal: productObj.finalPrice * item.quantity
+        price: itemPrice,
+        itemTotal: itemPrice * item.quantity
       };
     }).filter(item => item !== null);
 
-    // Calculate cart total
     const cartTotal = cartWithPrices.reduce((total, item) => {
       return total + item.itemTotal;
     }, 0);
@@ -271,7 +270,8 @@ export const getCart = async (req, res) => {
       success: true,
       count: cartWithPrices.length,
       cart: cartWithPrices,
-      cartTotal
+      cartTotal,
+      silverPrice: silverPrice.pricePerGram
     });
   } catch (error) {
     console.error('Get cart error:', error);
@@ -279,9 +279,8 @@ export const getCart = async (req, res) => {
   }
 };
 
-// Get Wishlist - Make sure it populates product details
 /**
- * @desc    Get user's wishlist
+ * @desc    Get user's wishlist with calculated prices
  * @route   GET /api/users/wishlist
  * @access  Private
  */
@@ -290,7 +289,10 @@ export const getWishlist = async (req, res) => {
     // Find user and populate wishlist with full product details
     const user = await User.findById(req.user._id).populate('wishlist');
 
-    // Map wishlist items with finalPrice
+    // ✅ Get current silver price
+    const silverPrice = await SilverPrice.getLatestPrice();
+
+    // Map wishlist items with calculated finalPrice
     const wishlistWithPrices = user.wishlist.map(product => {
       if (!product) {
         console.error('Wishlist item is null');
@@ -298,13 +300,23 @@ export const getWishlist = async (req, res) => {
       }
 
       const productObj = product.toObject();
+
+      // ✅ Calculate price based on silver weight or use finalPrice
+      if (productObj.weight && productObj.weight.silverWeight > 0) {
+        productObj.finalPrice = 
+          productObj.basePrice + 
+          (productObj.weight.silverWeight * silverPrice.pricePerGram) + 
+          (productObj.makingCharge || 0);
+      }
+
       return productObj;
     }).filter(item => item !== null);
 
     res.json({
       success: true,
       count: wishlistWithPrices.length,
-      wishlist: wishlistWithPrices
+      wishlist: wishlistWithPrices,
+      silverPrice: silverPrice.pricePerGram
     });
   } catch (error) {
     console.error('Get wishlist error:', error);
@@ -312,29 +324,27 @@ export const getWishlist = async (req, res) => {
   }
 };
 
-
 /**
  * @desc    Clear cart
  * @route   DELETE /api/users/cart
  * @access  Private
  */
+export const clearCart = async (req, res) => {
+  try {
+    // Find user and clear the cart
+    const user = await User.findById(req.user._id);
+    user.cart = [];
+    await user.save();
 
-export const clearCart = async(req, res) => {
-    try {
-        // Find user and clear the cart
-        const user = await User.findById(req.user._id);
-        user.cart = [];
-        await user.save();
+    res.json({
+      success: true,
+      message: "Cart cleared successfully",
+    })
 
-        res.json({
-            success: true,
-            message: "Cart cleared successfully",
-        })
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        })
-    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
+  }
 }

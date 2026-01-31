@@ -91,6 +91,11 @@ const ProductSchema = new mongoose.Schema({
             default: 'grams'
         }
     },
+    makingCharge: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
 
 }, {
     timestamps: true,

@@ -1,37 +1,20 @@
-//import express and create router
 import express from 'express';
-const router = express.Router();
-
-//import silver price controller
 import {
   getCurrentPrice,
   updatePrice,
+  fetchAndUpdatePrice,
   getPriceHistory
 } from '../controllers/silverPriceController.js';
-
-//import middleware
 import { protect, admin } from '../middleware/auth.js';
 
-/**
- * @route   GET /api/silver-price
- * @desc    Get current silver price
- * @access  Public
- */
+const router = express.Router();
+
+// Public route - Get current silver price
 router.get('/', getCurrentPrice);
 
-/**
- * @route   POST /api/silver-price
- * @desc    Update silver price (Admin only)
- * @access  Private/Admin
- */
+// Admin routes - Manage silver price
 router.put('/', protect, admin, updatePrice);
-
-/**
- * @route   GET /api/silver-price/history
- * @desc    Get price history
- * @access  Private/Admin
- */
+router.post('/fetch', protect, admin, fetchAndUpdatePrice);
 router.get('/history', protect, admin, getPriceHistory);
 
-// Export router
 export default router;

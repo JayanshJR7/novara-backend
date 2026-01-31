@@ -21,10 +21,14 @@ import carouselRoutes from './routes/carouselRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 import categoryRoutes from './routes/CategoryRoutes.js';
 import reviewRoutes from './routes/reviews.js';
+import silverPriceRoutes from './routes/silverPrice.js';
+import {initSilverPriceCron} from './services/silverPriceCron.js';
 
 const app = express();
 
-connectDB();
+connectDB().then(()=>{
+  initSilverPriceCron();
+});
 
 const allowedOrigins = [
   "http://localhost:5173", // local dev
@@ -93,6 +97,9 @@ app.use('/api/categories', categoryRoutes);
 
 //review routes
 app.use('/api/reviews', reviewRoutes);
+
+//silver price routes
+app.use('/api/silver-price', silverPriceRoutes);
 
 // ========== ERROR HANDLING ==========
 

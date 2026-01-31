@@ -35,7 +35,7 @@ const fetchFromGoldAPI = async () => {
  */
 const updateSilverPrice = async () => {
   try {
-    itemname('🔄 Fetching silver price from Gold API...');
+    console.log('🔄 Fetching silver price from Gold API...');
 
     const apiData = await fetchFromGoldAPI();
 
@@ -47,7 +47,7 @@ const updateSilverPrice = async () => {
       currency: 'INR'
     });
 
-    itemname('✅ Silver price updated successfully:', {
+    console.log('✅ Silver price updated successfully:', {
       pricePerGram: silverPrice.pricePerGram,
       time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     });
@@ -66,7 +66,7 @@ const updateSilverPrice = async () => {
 export const initSilverPriceCron = () => {
   // Morning update - 9:00 AM IST (3:30 AM UTC)
   cron.schedule('30 3 * * *', async () => {
-    itemname('⏰ Running morning silver price update (9:00 AM IST)...');
+    console.log('⏰ Running morning silver price update (9:00 AM IST)...');
     try {
       await updateSilverPrice();
     } catch (error) {
@@ -78,7 +78,7 @@ export const initSilverPriceCron = () => {
 
   // Evening update - 6:00 PM IST (12:30 PM UTC)
   cron.schedule('30 12 * * *', async () => {
-    itemname('⏰ Running evening silver price update (6:00 PM IST)...');
+    console.log('⏰ Running evening silver price update (6:00 PM IST)...');
     try {
       await updateSilverPrice();
     } catch (error) {
@@ -88,8 +88,8 @@ export const initSilverPriceCron = () => {
     timezone: 'UTC'
   });
 
-  itemname('✅ Silver price cron jobs initialized');
-  itemname('📅 Scheduled updates: 9:00 AM and 6:00 PM IST daily');
+  console.log('✅ Silver price cron jobs initialized');
+  console.log('📅 Scheduled updates: 9:00 AM and 6:00 PM IST daily');
 };
 
 // Export for manual testing
