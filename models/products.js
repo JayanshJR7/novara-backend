@@ -1,4 +1,3 @@
-// product schema -- Defines the structure of  jewellery product , stores product details  , pricing and category information
 import mongoose, { Schema } from "mongoose";
 
 const ProductSchema = new mongoose.Schema({
