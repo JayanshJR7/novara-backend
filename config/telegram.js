@@ -7,7 +7,7 @@ import Coupon from '../models/Coupon.js';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const bot = new TelegramBot(TOKEN, process.env.NODE_ENV === 'production' ? {} : { polling: true });
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, process.env.NODE_ENV === 'production' ? {} : { polling: true });
 
 
 // ============================================
