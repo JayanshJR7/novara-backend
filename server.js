@@ -23,6 +23,8 @@ import categoryRoutes from './routes/CategoryRoutes.js';
 import reviewRoutes from './routes/reviews.js';
 import silverPriceRoutes from './routes/silverPrice.js';
 import {initSilverPriceCron} from './services/silverPriceCron.js';
+import { handleTelegramWebhook } from './config/telegram.js';
+
 
 const app = express();
 
@@ -100,6 +102,9 @@ app.use('/api/reviews', reviewRoutes);
 
 //silver price routes
 app.use('/api/silver-price', silverPriceRoutes);
+
+//telegram webhook
+app.post('/api/telegram/webhook', handleTelegramWebhook);
 
 // ========== ERROR HANDLING ==========
 

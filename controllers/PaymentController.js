@@ -61,12 +61,6 @@ export const verifyRazorpayPayment = async (req, res) => {
       orderId
     } = req.body;
 
-    console.log('🔍 Payment verification request:', {
-      orderId,
-      razorpay_order_id,
-      razorpay_payment_id: razorpay_payment_id?.substring(0, 20) + '...'
-    });
-
     // Validate orderId
     if (!orderId) {
       return res.status(400).json({
@@ -86,30 +80,10 @@ export const verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    console.log('✅ Order found:', {
-      orderId: order._id,
-      userId: order.user?._id,
-      isAdmin: order.user?.isAdmin
-    });
-
     const isAdminTestOrder = razorpay_payment_id?.startsWith('test_admin_payment_');
     const isAdmin = order.user && order.user.isAdmin === true;
 
-    console.log('🔍 Admin check:', {
-      isAdminTestOrder,
-      isAdmin,
-      userExists: !!order.user,
-      paymentId: razorpay_payment_id
-    });
-
     if (isAdminTestOrder && isAdmin) {
-      console.log('🔧 ============================================');
-      console.log('🔧 ADMIN TEST ORDER DETECTED');
-      console.log('🔧 Skipping ALL Razorpay validation');
-      console.log('🔧 ============================================');
-      console.log(`   Admin user: ${order.user.email}`);
-      console.log(`   Test payment ID: ${razorpay_payment_id}`);
-
       order.paymentStatus = 'completed';
       order.orderStatus = 'confirmed';
       order.paymentInfo = {
@@ -129,7 +103,6 @@ export const verifyRazorpayPayment = async (req, res) => {
       // Send confirmation email
       try {
         await sendOrderConfirmationEmail(order);
-        console.log('✅ Admin test order confirmation email sent');
       } catch (emailError) {
         console.error('❌ Failed to send confirmation email:', emailError);
       }
@@ -171,14 +144,9 @@ ${order.shippingAddress?.zipCode || ''}
         `.trim();
 
         await sendTelegramMessage(telegramMessage);
-        console.log('✅ Admin test order Telegram notification sent');
       } catch (telegramError) {
         console.error('❌ Telegram notification failed:', telegramError);
       }
-
-      console.log('🔧 ============================================');
-      console.log('🔧 ADMIN TEST ORDER COMPLETED SUCCESSFULLY');
-      console.log('🔧 ============================================');
 
       return res.json({
         success: true,
@@ -188,10 +156,6 @@ ${order.shippingAddress?.zipCode || ''}
         adminTest: true
       });
     }
-
-    console.log('💳 ============================================');
-    console.log('💳 NORMAL PAYMENT VERIFICATION STARTED');
-    console.log('💳 ============================================');
 
     // Validate required fields (only for non-admin orders)
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -217,12 +181,10 @@ ${order.shippingAddress?.zipCode || ''}
       });
     }
 
-    console.log('✅ Payment signature verified');
 
     let paymentDetails;
     try {
       paymentDetails = await razorpayInstance.payments.fetch(razorpay_payment_id);
-      console.log('✅ Payment details fetched from Razorpay');
     } catch (error) {
       console.error('❌ Failed to fetch payment from Razorpay:', error);
       return res.status(500).json({
@@ -240,7 +202,6 @@ ${order.shippingAddress?.zipCode || ''}
       });
     }
 
-    console.log('✅ Payment status verified:', paymentDetails.status);
 
     // Step 4: Verify amount
     const expectedAmount = Math.round(order.totalAmount * 100);
@@ -255,7 +216,6 @@ ${order.shippingAddress?.zipCode || ''}
       });
     }
 
-    console.log('✅ Payment amount verified');
 
     // Step 5: Update order
     order.paymentStatus = 'completed';
@@ -272,12 +232,10 @@ ${order.shippingAddress?.zipCode || ''}
     await order.save();
     await order.populate('items.product');
 
-    console.log('✅ Order updated with payment info');
 
     // Send confirmation email
     try {
       await sendOrderConfirmationEmail(order);
-      console.log('✅ Order confirmation email sent');
     } catch (emailError) {
       console.error('❌ Failed to send confirmation email:', emailError);
     }
@@ -319,14 +277,9 @@ ${order.shippingAddress?.zipCode || ''}
       `.trim();
 
       await sendTelegramMessage(telegramMessage);
-      console.log('✅ Payment successful Telegram notification sent');
     } catch (telegramError) {
       console.error('❌ Telegram notification failed:', telegramError);
     }
-
-    console.log('💳 ============================================');
-    console.log('💳 PAYMENT VERIFICATION COMPLETED');
-    console.log('💳 ============================================');
 
     res.json({
       success: true,
@@ -352,8 +305,6 @@ ${order.shippingAddress?.zipCode || ''}
 export const handlePaymentFailure = async (req, res) => {
   try {
     const { orderId, error } = req.body;
-
-    console.log('❌ Payment failure for order:', orderId);
 
     const order = await Order.findById(orderId);
     if (order) {
@@ -383,7 +334,6 @@ export const handlePaymentFailure = async (req, res) => {
       `.trim();
 
       await sendTelegramMessage(telegramMessage);
-      console.log('✅ Payment failure Telegram notification sent');
     } catch (telegramError) {
       console.error('❌ Telegram notification failed:', telegramError);
     }

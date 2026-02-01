@@ -7,8 +7,31 @@ import Coupon from '../models/Coupon.js';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, process.env.NODE_ENV === 'production' ? {} : { polling: true });
+let bot;
 
+if (process.env.NODE_ENV === 'production') {
+  // Production: Webhook mode
+  bot = new TelegramBot(TELEGRAM_BOT_TOKEN);
+  
+  const domain = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL;
+  
+  if (domain) {
+    const WEBHOOK_URL = `https://${domain}/api/telegram/webhook`;
+    bot.setWebHook(WEBHOOK_URL)
+      .then(() => console.log('✅ Webhook set:', WEBHOOK_URL))
+      .catch(err => {
+        console.error('❌ Webhook failed:', err.message);
+        // Auto-retry
+        bot.deleteWebHook()
+          .then(() => bot.setWebHook(WEBHOOK_URL))
+          .then(() => console.log('✅ Webhook set on retry'))
+          .catch(e => console.error('❌ Retry failed:', e.message));
+      });
+  }
+} else {
+  // Development: Polling
+  bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+}
 
 // ============================================
 // 🎭 MAYA PERSONALITY & RESPONSES
@@ -1374,3 +1397,8 @@ export const sendTelegramMessage = async (message) => {
 };
 
 console.log('🤖 Maya bot is running with enhanced features, personality & Hindi support...');
+
+export const handleTelegramWebhook = (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+};

@@ -134,11 +134,6 @@ export const createProduct = async (req, res) => {
   try {
     const { itemname, itemCode, basePrice, category, description, deliveryType, weight } = req.body;
 
-    console.log('========== CREATE PRODUCT DEBUG ==========');
-    console.log('req.body.weight:', req.body.weight);
-    console.log('basePrice:', basePrice);
-    console.log('makingChargeRate:', req.body.makingChargeRate);
-
     if (!itemname) {
       return res.status(400).json({
         success: false,
@@ -205,30 +200,16 @@ export const createProduct = async (req, res) => {
     if (weight && weight.netWeight > 0) {
 
       const silverPrice = await SilverPrice.getLatestPrice();
-      console.log('\n📊 CALCULATION INPUTS:');
-      console.log('weight object:', weight);
-      console.log('weight.netWeight:', weight.netWeight);
-      console.log('typeof weight.netWeight:', typeof weight.netWeight);
       const netWeight = parseFloat(weight.netWeight);
       const makingChargeRate = parseFloat(req.body.makingChargeRate || 0);
-      console.log('Parsed netWeight:', netWeight);
-      console.log('makingChargeRate:', makingChargeRate);
-      console.log('silverPrice.pricePerGram:', silverPrice.pricePerGram);
 
       const silverCost = netWeight * silverPrice.pricePerGram;
       const makingCharges = makingChargeRate * netWeight;
       const total = basePriceValue + silverCost + makingCharges;
       finalPrice = total * 0.9; // 10% discount
-      console.log('\n💰 CALCULATION STEPS:');
-      console.log('basePrice:', basePriceValue);
-      console.log('silverCost:', silverCost);
-      console.log('makingCharges:', makingCharges);
-      console.log('total:', total);
-      console.log('finalPrice:', finalPrice);
     } else {
       // MANUAL PRICING
       finalPrice = basePriceValue * 0.9; // 10% discount
-      console.log('\n📝 MANUAL PRICING:', finalPrice);
     }
 
     // Create product
@@ -245,11 +226,6 @@ export const createProduct = async (req, res) => {
       deliveryType: deliveryType || 'ready-to-ship',
       weight: weight || { silverWeight: 0, netWeight: 0, grossWeight: 0, unit: 'grams' }
     });
-
-    console.log('\n✅ PRODUCT SAVED:');
-    console.log('Saved weight:', product.weight);
-    console.log('Saved finalPrice:', product.finalPrice);
-    console.log('==========================================\n');
 
 
     res.status(201).json({
